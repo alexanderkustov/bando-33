@@ -1,6 +1,15 @@
 # Bandō 33 tracker
 
-A self-contained HTML tracker for the Bandō 33 pilgrimage, planned from Shinjuku and nearby overnight bases. It includes temple order, opening-hour notes, Google Maps routes, travel guidance, Japanese phrases for the nōkyō-jiku, and browser-local progress tracking.
+A dependency-free static tracker for the Bandō 33 pilgrimage, planned from Shinjuku and nearby overnight bases. It includes temple order, opening-hour notes, Google Maps routes, travel guidance, Japanese phrases for the nōkyō-jiku, browser-local progress tracking, and day-specific prompts for ChatGPT itinerary optimisation.
+
+## Structure
+
+- `index.html` — semantic page shell and tracker content.
+- `styles.css` — visual design system and responsive layout.
+- `app.js` — application state, filters, progress, URL queries, and event handling.
+- `data/itinerary.js` — calendar, temple, fare, and route data.
+- `components/day-card.js` — reusable day-panel and temple-card renderer.
+- `shan-shui-reference.html` — local Shan Shui background renderer.
 
 ## Live site
 
@@ -8,13 +17,21 @@ https://able-purpose-bando.surge.sh/
 
 ## Run locally
 
-Open `index.html` directly in a browser, or serve the folder with any static HTTP server:
+Serve the folder with a static HTTP server because the application uses native ES modules:
 
 ```sh
 python3 -m http.server 8000
 ```
 
 Then visit http://localhost:8000/.
+
+To open a specific day directly, use its ISO date in the query string:
+
+```text
+http://localhost:8000/?day=2026-11-10
+```
+
+The “Ask ChatGPT” control copies a structured prompt for the selected day. The page also exposes its data as `window.BANDO33` for lightweight integrations.
 
 ## Deploy with Surge
 
