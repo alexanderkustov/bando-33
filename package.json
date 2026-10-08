@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
+    "deploy": "npm run build && surge build https://able-purpose-bando.surge.sh",
     "preview": "vite preview --host 127.0.0.1",
     "check": "node --check atlas.js && node --check app.js"
   },

@@ -30,7 +30,7 @@ npm run dev
 
 Then visit http://localhost:5173/.
 
-Create a static production bundle with `npm run build`; preview it locally with `npm run preview`. The generated `dist/` directory is suitable for static hosting.
+Create a static production bundle with `npm run build`; preview it locally with `npm run preview`. The generated `build/` directory is suitable for static hosting.
 
 The atlas uses Three.js 0.180 as a pnpm/npm dependency and Vite resolves the package imports during development and production builds.
 
@@ -44,14 +44,14 @@ The “Ask ChatGPT” control copies a structured prompt for the selected day. T
 
 ## Deploy with Surge
 
-Install Surge if needed, authenticate, then publish the repository directory:
+Install Surge if needed and authenticate, then build and publish the production bundle:
 
 ```sh
 npm install --global surge
-surge . https://able-purpose-bando.surge.sh
+npm run deploy
 ```
 
-The root `CNAME` file records the intended Surge hostname. Keep the site as a static deployment; there is no build step or backend.
+The root `CNAME` file records the intended Surge hostname. Keep the site as a static deployment; there is no backend.
 
 ## Notes
 

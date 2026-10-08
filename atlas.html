@@ -11,18 +11,15 @@
 <header>
   <a class="back-link" href="index.html">← Back to tracker</a>
   <h1>Bandō 33 · pilgrimage atlas</h1>
-  <p>Thirty-three temples, one winding journey through Kantō</p>
 </header>
 <main>
-  <section class="atlas" aria-labelledby="atlas-title">
+  <section class="atlas" aria-label="Bandō 33 Kantō atlas">
     <div class="atlas-head">
       <div>
         <p class="eyebrow">BANDŌ 33 · KANTŌ ATLAS</p>
-        <h2 id="atlas-title">The pilgrimage, held in one landscape</h2>
-        <p class="atlas-dek">A sculptural view of the 33 stops. Tilt across the landscape and select a temple to bring its story forward.</p>
       </div>
       <div class="atlas-stats" aria-label="Atlas statistics">
-        <span><strong id="atlasVisibleCount">33</strong><small>shrines</small></span>
+        <span><strong id="atlasVisibleCount">33</strong><small>temples</small></span>
         <span><strong id="atlasDoneCount">0</strong><small>stamped</small></span>
         <span><strong>18</strong><small>days</small></span>
       </div>
@@ -33,13 +30,12 @@
         <div class="atlas-loading" id="atlasLoading">Loading the mountain path…</div>
         <div class="atlas-tooltip" id="atlasTooltip" hidden></div>
         <div class="atlas-controls" aria-label="Map controls">
-          <button type="button" id="atlasTiltLeft" aria-label="Tilt view left" title="Tilt view left">↶</button>
-          <button type="button" id="atlasTiltRight" aria-label="Tilt view right" title="Tilt view right">↷</button>
+          <button type="button" id="atlasPrev" aria-label="Previous temple" title="Previous temple">←</button>
+          <button type="button" id="atlasNext" aria-label="Next temple" title="Next temple">→</button>
           <button type="button" id="atlasZoomOut" aria-label="Zoom out">−</button>
           <button type="button" id="atlasZoomIn" aria-label="Zoom in">+</button>
           <button type="button" id="atlasReset" aria-label="Reset atlas view">Reset</button>
         </div>
-        <p class="atlas-help">Drag to rotate freely · right-drag to pan · scroll to zoom</p>
       </div>
       <aside class="atlas-index" aria-label="Temple index">
         <div class="index-head"><strong>33 temples</strong><span>in pilgrimage order</span></div>
@@ -48,7 +44,6 @@
     </div>
     <div class="atlas-caption" aria-live="polite"><span id="atlasFocus">Select a temple marker to begin.</span><a id="atlasMap" href="#" target="_blank" rel="noopener">Open selected temple in Maps ↗</a></div>
   </section>
-  <p class="atlas-note">The scene is intentionally poetic rather than navigational: use the tracker for exact day order, travel times, and map routes.</p>
 </main>
 <script type="module" src="atlas.js"></script>
 </body>
