@@ -143,6 +143,7 @@ function render() {
   for (const t of TEMPLES) if (state[t.num]) done++;
   document.getElementById('count').textContent = done + ' / ' + TEMPLES.length;
   document.getElementById('bar').style.width = (100 * done / TEMPLES.length) + '%';
+  window.dispatchEvent(new CustomEvent('bando:progress', { detail: { done, total: TEMPLES.length, state } }));
 
   const totals = Object.values(FARES).reduce((sum, fare) => {
     const amounts = fare.match(/[0-9,]+/g).slice(0, 2).map(value => Number(value.replace(/,/g, '')));

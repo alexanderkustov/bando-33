@@ -1,15 +1,19 @@
 # Bandō 33 tracker
 
-A dependency-free static tracker for the Bandō 33 pilgrimage, planned from Shinjuku and nearby overnight bases. It includes temple order, opening-hour notes, Google Maps routes, travel guidance, Japanese phrases for the nōkyō-jiku, browser-local progress tracking, and day-specific prompts for ChatGPT itinerary optimisation.
+A static tracker and Three.js atlas for the Bandō 33 pilgrimage, planned from Shinjuku and nearby overnight bases. It includes temple order, opening-hour notes, Google Maps routes, travel guidance, Japanese phrases for the nōkyō-jiku, browser-local progress tracking, and day-specific prompts for ChatGPT itinerary optimisation.
 
 ## Structure
 
 - `index.html` — semantic page shell and tracker content.
+- `atlas.html` — standalone interactive pilgrimage atlas page.
 - `styles.css` — visual design system and responsive layout.
 - `app.js` — application state, filters, progress, URL queries, and event handling.
 - `data/itinerary.js` — calendar, temple, fare, and route data.
 - `components/day-card.js` — reusable day-panel and temple-card renderer.
 - `shan-shui-reference.html` — local Shan Shui background renderer.
+- `atlas.js` — interactive Three.js route atlas and marker selection.
+- `package.json` — pnpm metadata and lightweight validation scripts.
+- `vite.config.js` — bundles both the tracker and standalone atlas pages.
 
 ## Live site
 
@@ -17,13 +21,18 @@ https://able-purpose-bando.surge.sh/
 
 ## Run locally
 
-Serve the folder with a static HTTP server because the application uses native ES modules:
+Install dependencies and run the Vite development server:
 
 ```sh
-python3 -m http.server 8000
+npm install
+npm run dev
 ```
 
-Then visit http://localhost:8000/.
+Then visit http://localhost:5173/.
+
+Create a static production bundle with `npm run build`; preview it locally with `npm run preview`. The generated `dist/` directory is suitable for static hosting.
+
+The atlas uses Three.js 0.180 as a pnpm/npm dependency and Vite resolves the package imports during development and production builds.
 
 To open a specific day directly, use its ISO date in the query string:
 

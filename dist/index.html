@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="theme-color" content="#1a1a1a"/>
+<title>Bandō 33 · 納経軸 tracker</title>
+  <script type="module" crossorigin src="/assets/tracker-DQRBwDTV.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/itinerary-BmcVJjN-.js">
+  <link rel="stylesheet" crossorigin href="/assets/itinerary-CRCL4b_7.css">
+</head>
+<body>
+<iframe id="shanShui" src="shan-shui-reference.html" title="Procedurally generated shan shui landscape background" aria-hidden="true" tabindex="-1"></iframe>
+<header>
+  <h1>Bandō 33 · 納経軸 tracker</h1>
+  <p>3–20 Nov 2026 · daily maps · Shinjuku travel · Tokyo base</p>
+  <a class="atlas-link" href="atlas.html">Open pilgrimage atlas ↗</a>
+  <div class="bar">
+    <span class="progress-label">巡礼 · JUNREI</span>
+    <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+    <span class="count" id="count">0 / 33</span>
+    <div class="filters">
+      <button type="button" data-filter="all" class="active">All</button>
+      <button type="button" data-filter="todo">To stamp</button>
+      <button type="button" data-filter="done">Done</button>
+    </div>
+    <button type="button" id="export">Export</button>
+    <button type="button" id="reset">Reset</button>
+  </div>
+</header>
+<main>
+  <nav class="week-nav" id="weekNav" aria-label="Itinerary weeks"></nav>
+  <div id="list"></div>
+  <section class="total-box" id="totalBox">
+    <h2>Estimated rail / local-transit total</h2>
+    <p id="totalText">Calculating…</p>
+  </section>
+  <details class="trip-notes">
+    <summary>Trip notes, map picker, and research sources</summary>
+    <section class="note compact-plan">
+      <h2>Compressed plan · finish by 17 Nov</h2>
+      <p><strong>Use only with a hire car and overnight hubs.</strong> The original 3–20 Nov plan remains the default; this is the faster alternative to follow if needed.</p>
+      <p><strong>10 Nov:</strong> #17 + #19 + #20 · Tochigi/Utsunomiya → Mashiko<br>
+      <strong>11 Nov:</strong> #18 · Nikkō / Chūzenji overnight<br>
+      <strong>12 Nov:</strong> #21 + #22 + #23 · Daigo → Hitachiōta → Kasama<br>
+      <strong>13 Nov:</strong> #24 + #25 + #26 · Sakuragawa → Tsukuba → Tsuchiura<br>
+      <strong>14 Nov:</strong> #27 + #28 + #29 · Chōshi → Narita → Chiba<br>
+      <strong>15 Nov:</strong> #30 + #31 · Kisarazu → Chōnan<br>
+      <strong>16 Nov:</strong> #32 + #33 · Isumi → Tateyama<br>
+      <strong>17 Nov:</strong> contingency / recovery day</p>
+      <p class="notes">#21–23 and #24–26 are high-risk three-stop days. Keep #31 optional until the landslide/reopening status is confirmed.</p>
+    </section>
+    <section class="phrases">
+      <h2>At the desk (納経軸)</h2>
+      <dl>
+        <dt>Nōkyō-jiku o kudasai.</dt>
+        <dd>I’d like a hanging scroll. (buying)</dd>
+        <dt>Kore wa nōkyō-chō ja nakute, nōkyō-jiku desu. Kore ni onegaishimasu.</dt>
+        <dd>This isn’t the book — it’s the hanging scroll. Please stamp this.</dd>
+        <dt>Nōkyō-jiku ni onegaishimasu.</dt>
+        <dd>Please stamp the hanging scroll.</dd>
+        <dt>Chigaimasu — jiku desu.</dt>
+        <dd>Wrong one — it’s the scroll.</dd>
+        <dt>Ikura desu ka? · Arigatō gozaimasu.</dt>
+        <dd>How much? · Thank you.</dd>
+      </dl>
+    </section>
+    <section class="today-box" id="todayBox">
+      <h2>Today’s map</h2>
+      <p class="meta">Pick the day you’re about to start — opens Google Maps with every stop in order.</p>
+      <select id="dayPick" aria-label="Choose day"></select>
+      <div id="todaySummary" class="meta"></div>
+      <div class="today-actions">
+        <a class="btn primary mapday icon" id="todayMap" href="#" target="_blank" rel="noopener">↗</a>
+        <button type="button" class="btn" id="copyPrompt">Ask ChatGPT</button>
+      </div>
+    </section>
+    <section class="note">
+      <h2>List source</h2>
+      <p>Names matched to <a href="https://www.benricho.org/map_jyunrei/bando33/" target="_blank" rel="noopener">Benricho</a>. Hours from bandou.gr.jp. Progress saves in this browser.</p>
+    </section>
+    <section class="note">
+      <h2>Transport cost research</h2>
+      <p>Planning estimates are shown on each stop for the planned leg from Shinjuku or the overnight hub. They are one-way adult fares in yen, usually IC/basic fare plus local bus or rail. Limited-express and Shinkansen supplements, taxis, hire cars, and temple admission are excluded unless noted. Re-check on the day.</p>
+    </section>
+  </details>
+</main>
+<footer>
+  Maps open in Google Maps. Travel times are rough door-to-desk ranges from Shinjuku (or overnight hub).
+</footer>
+</body>
+</html>

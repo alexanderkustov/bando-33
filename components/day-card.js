@@ -3,9 +3,10 @@ export function renderDayCard({ day, temples, meta, filter, state, fares, rechec
   section.className = 'day';
   section.dataset.day = day;
   section.id = 'day-' + (meta ? meta.iso : day);
+  section.dataset.date = meta ? `${Number(meta.iso.slice(5, 7))}月${Number(meta.iso.slice(8, 10))}日` : day;
 
   const heading = document.createElement('h2');
-  heading.textContent = day;
+  heading.textContent = meta ? '巡礼' : day;
   section.appendChild(heading);
 
   if (meta) {
@@ -54,7 +55,7 @@ export function renderDayCard({ day, temples, meta, filter, state, fares, rechec
         ${fromShinjuku ? `<div class="travel">From Shinjuku: ${fromShinjuku}</div>` : ''}
         ${fares[temple.num] ? `<div class="fare">Estimated transport: ${fares[temple.num]}</div>` : ''}
       </div>
-      <div class="actions"><a class="btn primary" href="${temple.maps}" target="_blank" rel="noopener">Maps</a></div>`;
+      <div class="actions"><a class="btn" href="${temple.maps}" target="_blank" rel="noopener">Map  ↗</a></div>`;
     card.querySelector('.check').addEventListener('change', (event) => onToggle(temple.num, event.target.checked));
     section.appendChild(card);
   }
