@@ -8,17 +8,22 @@ const loading = document.getElementById('atlasLoading');
 const tooltip = document.getElementById('atlasTooltip');
 const focus = document.getElementById('atlasFocus');
 const mapLink = document.getElementById('atlasMap');
+const ordinal = document.getElementById('atlasOrdinal');
+const kicker = document.getElementById('atlasKicker');
+const templeName = document.getElementById('atlasTempleName');
+const templeMeta = document.getElementById('atlasTempleMeta');
 const done = new Set();
 const colours = {
-  ink: 0x29251f, vermilion: 0xb94b36, pine: 0x4f6d54, paper: 0xe9e1cf,
-  water: 0x36a9d6, shore: 0xe2c77c, grass: 0x77b94c, upland: 0x4f883f,
-  mountain: 0x506f49, field: 0xa9c957, earth: 0x6e3f2f
+  ink: 0x241a18, vermilion: 0xa93d2d, pine: 0x314e42, paper: 0xefe4cb,
+  water: 0x285f6e, shore: 0xc9ad68, grass: 0x658458, upland: 0x435f46,
+  mountain: 0x344d43, field: 0x8e9d5e, earth: 0x55382f, gold: 0xd4a64e
 };
 const mapGroup = new THREE.Group();
 const terrainMeshes = [];
 const terrainCells = [];
 const markerPositions = new Map();
 const sceneryPositions = [];
+const clouds = [];
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 // Exact shrine positions supplied as latitude/longitude. These replace the
 // former city-centre approximations and keep the route geographically honest.
@@ -51,22 +56,29 @@ function updateAtlasProgress(event) {
 const toWorld = ([lon, lat]) => new THREE.Vector3((lon - 139.9) * 6.2, (lat - 35.95) * 5.2, 0);
 const kantoOutline = [[138.72,36.78],[139.22,37.08],[139.92,37.1],[140.38,36.96],[140.65,36.7],[140.78,36.3],[140.84,35.92],[140.9,35.72],[140.56,35.53],[140.43,35.25],[140.2,35.0],[139.87,34.95],[139.74,35.12],[139.78,35.31],[139.91,35.45],[140.03,35.53],[140.0,35.63],[139.87,35.63],[139.72,35.5],[139.58,35.31],[139.47,35.22],[139.25,35.25],[138.62,35.23],[138.56,35.5],[138.82,35.8],[138.67,36.2]];
 
-let scene, camera, renderer, controls, raycaster, pointer, waterMaterial, markers = [], selected = null, raf;
+let scene, camera, renderer, controls, raycaster, pointer, waterMaterial, markers = [], selected = null, hovered = null, selectionAura, raf;
 const targetGoal = new THREE.Vector3(-.8,.45,.2);
 try { init(); } catch (error) { loading.textContent = 'The atlas could not load in this browser. The itinerary below is still fully available.'; console.error(error); }
 
 function init() {
-  scene = new THREE.Scene(); scene.background = new THREE.Color(0x87c8d8); scene.fog = new THREE.Fog(0x87c8d8, 38, 64);
+  scene = new THREE.Scene(); scene.background = makeSkyTexture(); scene.fog = new THREE.FogExp2(0x75949a, .018);
   // Low, south-facing orthographic view: east-west stays horizontal and the
   // northern mountain edge recedes, matching the supplied board-game view.
-  camera = new THREE.OrthographicCamera(-12, 12, 7, -7, .1, 100); camera.up.set(0,0,1); camera.position.set(-.8, -25, 19); camera.lookAt(-.8, .45, .2);
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(stage.clientWidth, stage.clientHeight); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1;
-  controls = new OrbitControls(camera, canvas); controls.target.copy(targetGoal); controls.enableDamping=true; controls.dampingFactor=.075; controls.rotateSpeed=.55; controls.zoomSpeed=.75; controls.zoomToCursor=true; controls.enablePan=false; controls.minPolarAngle=THREE.MathUtils.degToRad(43); controls.maxPolarAngle=THREE.MathUtils.degToRad(62); controls.minZoom=.72; controls.maxZoom=3.6; controls.update(); const initialAzimuth=controls.getAzimuthalAngle(); controls.minAzimuthAngle=initialAzimuth-THREE.MathUtils.degToRad(100); controls.maxAzimuthAngle=initialAzimuth+THREE.MathUtils.degToRad(100); controls.saveState();
-  scene.add(new THREE.HemisphereLight(0xfff7de, 0x8a6f60, 2.15)); const sun = new THREE.DirectionalLight(0xffe0ad, 3.7); sun.position.set(-12, -14, 25); sun.castShadow = true; sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-14; sun.shadow.camera.right=14; sun.shadow.camera.top=13; sun.shadow.camera.bottom=-13; sun.shadow.bias=-.00035; scene.add(sun);
+  camera = new THREE.OrthographicCamera(-12, 12, 7, -7, .1, 100); camera.up.set(0,0,1); camera.position.set(-.8, -25, 20); camera.lookAt(-.8, .45, .2);
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(stage.clientWidth, stage.clientHeight); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.08;
+  controls = new OrbitControls(camera, canvas); controls.target.copy(targetGoal); controls.enableDamping=true; controls.dampingFactor=.075; controls.rotateSpeed=.46; controls.zoomSpeed=.7; controls.zoomToCursor=true; controls.enablePan=false; controls.minPolarAngle=THREE.MathUtils.degToRad(40); controls.maxPolarAngle=THREE.MathUtils.degToRad(64); controls.minZoom=.72; controls.maxZoom=3.6; controls.update(); const initialAzimuth=controls.getAzimuthalAngle(); controls.minAzimuthAngle=initialAzimuth-THREE.MathUtils.degToRad(78); controls.maxAzimuthAngle=initialAzimuth+THREE.MathUtils.degToRad(78); controls.saveState();
+  scene.add(new THREE.HemisphereLight(0xfff0d0, 0x243d3d, 2.35)); const sun = new THREE.DirectionalLight(0xffd29b, 4.4); sun.position.set(-11, -16, 24); sun.castShadow = true; sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-14; sun.shadow.camera.right=14; sun.shadow.camera.top=13; sun.shadow.camera.bottom=-13; sun.shadow.bias=-.00035; scene.add(sun);
+  const fill=new THREE.DirectionalLight(0x8dc4c5,.8); fill.position.set(12,10,8); scene.add(fill);
   makeOcean();
-  scene.add(mapGroup); makeKanto(); makeMarkers(); raycaster = new THREE.Raycaster(); pointer = new THREE.Vector2();
-  canvas.addEventListener('pointermove', onPointerMove); canvas.addEventListener('click', onClick); window.addEventListener('resize', resize); document.getElementById('atlasReset').addEventListener('click', resetView); document.getElementById('atlasZoomIn').addEventListener('click', () => zoomBy(1.25)); document.getElementById('atlasZoomOut').addEventListener('click', () => zoomBy(.8)); document.getElementById('atlasPrev').addEventListener('click', () => stepTemple(-1)); document.getElementById('atlasNext').addEventListener('click', () => stepTemple(1)); window.addEventListener('bando:progress', updateAtlasProgress);
+  scene.add(mapGroup); makeKanto(); makeMarkers(); makeForest(); makeMapLabels(); makeClouds(); makeSelectionAura(); raycaster = new THREE.Raycaster(); pointer = new THREE.Vector2();
+  canvas.addEventListener('pointermove', onPointerMove); canvas.addEventListener('pointerleave', clearHover); canvas.addEventListener('click', onClick); window.addEventListener('resize', resize); window.addEventListener('keydown', onKeyDown); document.getElementById('atlasReset').addEventListener('click', resetView); document.getElementById('atlasZoomIn').addEventListener('click', () => zoomBy(1.25)); document.getElementById('atlasZoomOut').addEventListener('click', () => zoomBy(.8)); document.getElementById('atlasPrev').addEventListener('click', () => stepTemple(-1)); document.getElementById('atlasNext').addEventListener('click', () => stepTemple(1)); window.addEventListener('bando:progress', updateAtlasProgress);
   document.getElementById('atlasVisibleCount').textContent = TEMPLES.length; buildTempleIndex(); updateAtlasProgress(); resize(); loading.remove(); animate();
+}
+function makeSkyTexture() {
+  const sky=document.createElement('canvas'); sky.width=1024; sky.height=1024; const context=sky.getContext('2d');
+  const gradient=context.createLinearGradient(0,0,0,1024); gradient.addColorStop(0,'#708f94'); gradient.addColorStop(.42,'#a7b8ad'); gradient.addColorStop(.72,'#d9c8a6'); gradient.addColorStop(1,'#d6a36e'); context.fillStyle=gradient; context.fillRect(0,0,1024,1024);
+  const sun=context.createRadialGradient(190,210,4,190,210,170); sun.addColorStop(0,'rgba(255,239,194,.92)'); sun.addColorStop(.16,'rgba(255,220,160,.38)'); sun.addColorStop(1,'rgba(255,210,150,0)'); context.fillStyle=sun; context.fillRect(0,0,1024,1024);
+  const texture=new THREE.CanvasTexture(sky); texture.colorSpace=THREE.SRGBColorSpace; return texture;
 }
 function makeOcean() {
   waterMaterial=new THREE.ShaderMaterial({
@@ -77,9 +89,9 @@ function makeOcean() {
       varying float vWave;
       void main(){
         vec3 displaced=position;
-        float wave=sin(position.x*.62+uTime*.2)*.035
-          +sin(position.y*.48-uTime*.15)*.026
-          +sin((position.x+position.y)*.31+uTime*.11)*.018;
+        float wave=sin(position.x*.44+uTime*.28)*.052
+          +sin(position.y*.71-uTime*.22)*.032
+          +sin((position.x+position.y)*.26+uTime*.16)*.024;
         displaced.z+=wave;
         vWave=wave;
         vec4 worldPosition=modelMatrix*vec4(displaced,1.0);
@@ -111,32 +123,40 @@ function makeOcean() {
         vec2 secondId=floor((p-halfSpacing)/spacing)*2.0+1.0;
         vec2 cellId=useFirst?firstId:secondId;
         vec2 absoluteLocal=abs(local);
-        float side=smoothMaximum(absoluteLocal.x,dot(absoluteLocal,normalize(vec2(1.0,1.7320508))),.09);
-        float edge=.5-side;
-        float centreGlow=1.0-smoothstep(.08,.58,length(local));
-        return vec3(edge,hash21(cellId+7.31),centreGlow);
+        float side=smoothMaximum(absoluteLocal.x,dot(absoluteLocal,normalize(vec2(1.0,1.7320508))),.08);
+        return vec3(.5-side,hash21(cellId+7.31),1.0-smoothstep(.06,.58,length(local)));
       }
       void main(){
-        vec2 flow=vWorldPosition.xy*.39+vec2(uTime*.012,-uTime*.007);
-        flow+=vec2(sin(flow.y*1.2+uTime*.018),sin(flow.x*1.05-uTime*.015))*.055;
+        vec2 p=vWorldPosition.xy;
+        float broad=.5+.5*sin(p.x*.14-p.y*.1+uTime*.022);
+        vec2 flow=p*.43;
+        flow.x+=sin(p.y*.24+uTime*.38)*.075+sin(p.y*.08-uTime*.16)*.035;
+        flow.y+=sin(p.x*.2-uTime*.29)*.06+sin((p.x+p.y)*.09+uTime*.14)*.025;
+        flow+=vec2(uTime*.018,-uTime*.01);
         vec3 cells=oceanHex(flow);
-        float cellTone=smoothstep(.08,.92,cells.y);
-        float broadGradient=.5+.5*sin(vWorldPosition.x*.16-vWorldPosition.y*.1+uTime*.025);
-        float blueMix=clamp(.18+cellTone*.5+broadGradient*.16+cells.z*.08,0.0,1.0);
-        vec3 deep=vec3(.16,.43,.62);
-        vec3 blue=vec3(.47,.73,.82);
-        vec3 colour=mix(deep,blue,blueMix);
-        colour+=vec3(.025,.045,.05)*smoothstep(-.06,.07,vWave);
-        float edgeWidth=fwidth(cells.x);
-        float paleEdge=1.0-smoothstep(.025-edgeWidth,.125+edgeWidth,cells.x);
-        float foamEdge=1.0-smoothstep(-.008-edgeWidth,.052+edgeWidth,cells.x);
-        colour=mix(colour,vec3(.65,.82,.86),paleEdge*.34);
-        colour=mix(colour,vec3(.84,.92,.92),foamEdge*.5);
+        float cellTone=smoothstep(.08,.94,cells.y);
+        float hexCore=1.0-smoothstep(.012,.052,cells.x);
+        float hexHalo=1.0-smoothstep(.025,.19,cells.x);
+        float innerLine=1.0-smoothstep(.0,.075,abs(sin((p.x-p.y)*.42+uTime*.09)-.88));
+        vec3 deep=vec3(.045,.16,.22);
+        vec3 jade=vec3(.13,.34,.4);
+        vec3 mist=vec3(.44,.69,.72);
+        float cellGradient=cells.z*(.045+cellTone*.035);
+        vec3 colour=mix(deep,jade,.2+broad*.29+cellTone*.075+smoothstep(-.07,.08,vWave)*.08);
+        colour=mix(colour,mist,cellGradient);
+        float edgePulse=.92+sin(p.x*.11+p.y*.08+uTime*.55)*.08;
+        float translucentEdge=(hexHalo*(.075+broad*.035)+hexCore*(.07+cellTone*.025))*edgePulse;
+        colour=mix(colour,mist,translucentEdge+innerLine*.018);
+        vec2 bayDistance=(p-vec2(-.45,-2.35))/vec2(1.75,2.25);
+        float bayShallows=exp(-dot(bayDistance,bayDistance)*1.6);
+        colour=mix(colour,vec3(.2,.43,.47),bayShallows*.16);
+        float horizon=clamp((p.y+18.0)/38.0,0.0,1.0);
+        colour+=vec3(.08,.065,.035)*horizon;
         gl_FragColor=vec4(colour,1.0);
       }
     `
   });
-  const waterFloor=new THREE.Mesh(new THREE.PlaneGeometry(200,200,120,120),waterMaterial);
+  const waterFloor=new THREE.Mesh(new THREE.PlaneGeometry(200,200,140,140),waterMaterial);
   waterFloor.position.z=-.63;
   scene.add(waterFloor);
 }
@@ -161,9 +181,14 @@ function nearestTerrainCell(position,includeWater=true) {
 function groundHeightAt(position) { return nearestTerrainCell(position)?.top ?? .3; }
 function makeHexTerrain() {
   const outline=kantoOutline.map(pair=>{const p=toWorld(pair); return new THREE.Vector2(p.x,p.y);});
-  // Tokyo Bay remains open to the Pacific so the animated ocean reads as one
-  // continuous body of water between Kanagawa and the Bōsō Peninsula.
-  const tokyoBay=[[139.55,34.88],[139.76,34.88],[139.82,35.08],[139.97,35.3],[139.94,35.48],[139.86,35.65],[139.77,35.5],[139.7,35.3],[139.6,35.14]].map(pair=>{const p=toWorld(pair); return new THREE.Vector2(p.x,p.y);});
+  // Simplified from the GSI Tokyo Bay coastline: the broad inner bay reaches
+  // north to Tokyo, with Kanagawa on the west and the Bōsō Peninsula on the east.
+  // Keeping this as an open cut-out lets the animated ocean flow into the bay.
+  const tokyoBay=[
+    [139.64,35.17],[139.84,35.16],[139.97,35.25],[140.04,35.37],
+    [140.08,35.49],[140.05,35.58],[139.97,35.64],[139.85,35.67],
+    [139.75,35.63],[139.68,35.55],[139.62,35.44],[139.61,35.3]
+  ].map(pair=>{const p=toWorld(pair); return new THREE.Vector2(p.x,p.y);});
   const tileRadius=.445, gridSize=.455, xStep=Math.sqrt(3)*gridSize, rowStep=1.5*gridSize;
   const minX=Math.min(...outline.map(p=>p.x))-.5, maxX=Math.max(...outline.map(p=>p.x))+.5;
   const minY=Math.min(...outline.map(p=>p.y))-.5, maxY=Math.max(...outline.map(p=>p.y))+.5;
@@ -180,7 +205,7 @@ function makeHexTerrain() {
       const highland=!water && !mountain && (y>2.45 || x<-2.85);
       const variation=Math.abs(Math.round(x*37+y*53))%3;
       const top=water?.12:coast?.26:mountain?1.02+variation*.055:highland?.7+variation*.04:southernHills?.54+variation*.03:.34+variation*.018;
-      const palettes=water?[0x208fca,0x27a8da,0x38b5df]:coast?[0xd9bc66,0xe4ca7a,0xe8d28a]:mountain?[0x426d39,0x4b793d,0x568442]:highland?[0x5d9141,0x679d45,0x56883c]:southernHills?[0x68a247,0x72ae4b,0x609941]:[0x75b84c,0x82c653,0x6eae48];
+      const palettes=water?[0x316f78,0x3b8187,0x4b9391]:coast?[0xc4a45e,0xd0b773,0xd9c58b]:mountain?[0x314c3f,0x3a5845,0x47664b]:highland?[0x4c6d48,0x58794e,0x405f43]:southernHills?[0x617b50,0x6d8957,0x577049]:[0x788b5b,0x879965,0x6d8055];
       terrainCells.push({x,y,top,water,colour:palettes[variation]});
     }
   }
@@ -189,8 +214,8 @@ function makeHexTerrain() {
   for(let i=0;i<6;i++){const angle=Math.PI/6+i*Math.PI/3,x=Math.cos(angle)*(tileRadius-.018),y=Math.sin(angle)*(tileRadius-.018); if(i===0)topShape.moveTo(x,y); else topShape.lineTo(x,y);}
   topShape.closePath();
   const topGeometry=new THREE.ExtrudeGeometry(topShape,{depth:.1,bevelEnabled:true,bevelSegments:1,bevelSize:.018,bevelThickness:.018}); topGeometry.translate(0,0,-.05);
-  const bases=new THREE.InstancedMesh(baseGeometry,new THREE.MeshStandardMaterial({color:colours.earth,roughness:.92,flatShading:true}),terrainCells.length);
-  const tops=new THREE.InstancedMesh(topGeometry,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.82,flatShading:true}),terrainCells.length);
+  const bases=new THREE.InstancedMesh(baseGeometry,new THREE.MeshStandardMaterial({color:colours.earth,roughness:.96,flatShading:true}),terrainCells.length);
+  const tops=new THREE.InstancedMesh(topGeometry,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.88,flatShading:true}),terrainCells.length);
   const matrix=new THREE.Matrix4(), colour=new THREE.Color(), bottom=-.52;
   terrainCells.forEach((cell,index)=>{
     const depth=cell.top-.1-bottom;
@@ -204,11 +229,13 @@ function makeHexTerrain() {
 function addMountain(lon,lat,size=1) {
   const p=toWorld([lon,lat]), group=new THREE.Group(); group.position.set(p.x,p.y,groundHeightAt(p)); sceneryPositions.push(p.clone());
   const material=new THREE.MeshStandardMaterial({color:colours.mountain,roughness:.96,flatShading:true});
-  [[0,0,1],[-.28,.08,.7],[.3,.12,.78]].forEach(([x,y,s])=>{const rock=new THREE.Mesh(new THREE.ConeGeometry(.5*size*s,1.2*size*s,7),material); rock.rotation.x=Math.PI/2; rock.position.set(x*size,y*size,.56*size*s); rock.castShadow=true; group.add(rock);});
+  const shadowMaterial=new THREE.MeshStandardMaterial({color:0x253c36,roughness:.98,flatShading:true});
+  [[0,0,1],[-.28,.08,.7],[.3,.12,.78]].forEach(([x,y,s],index)=>{const rock=new THREE.Mesh(new THREE.ConeGeometry(.5*size*s,1.2*size*s,7),index===1?shadowMaterial:material); rock.rotation.x=Math.PI/2; rock.position.set(x*size,y*size,.56*size*s); rock.castShadow=true; group.add(rock);});
+  if(size>.6){const cap=new THREE.Mesh(new THREE.ConeGeometry(.17*size,.31*size,7),new THREE.MeshStandardMaterial({color:0xd8d9c8,roughness:.92,flatShading:true})); cap.rotation.x=Math.PI/2; cap.position.z=1.05*size; group.add(cap);}
   mapGroup.add(group);
 }
 function addFuji() {
-  const p=new THREE.Vector3(-8.4,-4.55,0), surface=.25, platform=new THREE.Group(), group=new THREE.Group(); sceneryPositions.push(p.clone());
+  const p=new THREE.Vector3(-7.72,-4.12,0), surface=.25, platform=new THREE.Group(), group=new THREE.Group(); sceneryPositions.push(p.clone());
   const platformBaseGeometry=new THREE.CylinderGeometry(.49,.49,1,6); platformBaseGeometry.rotateX(Math.PI/2); platformBaseGeometry.rotateZ(Math.PI/6);
   const platformTopGeometry=new THREE.CylinderGeometry(.475,.485,.12,6); platformTopGeometry.rotateX(Math.PI/2); platformTopGeometry.rotateZ(Math.PI/6);
   const platformBaseMaterial=new THREE.MeshStandardMaterial({color:colours.earth,roughness:.92,flatShading:true});
@@ -217,20 +244,23 @@ function addFuji() {
   offsets.forEach(([x,y],index)=>{const top=surface-(index%2)*.035,depth=top-.1+.52,base=new THREE.Mesh(platformBaseGeometry,platformBaseMaterial),cap=new THREE.Mesh(platformTopGeometry,new THREE.MeshStandardMaterial({color:platformTopColours[index%3],roughness:.86,flatShading:true})); base.scale.z=depth; base.position.set(x,y,-.52+depth/2); cap.position.set(x,y,top-.06); base.castShadow=true; base.receiveShadow=true; cap.castShadow=true; cap.receiveShadow=true; platform.add(base,cap);});
   platform.position.set(p.x,p.y,0); mapGroup.add(platform);
   group.position.set(p.x,p.y,surface);
-  const foothill=new THREE.Mesh(new THREE.CylinderGeometry(1.43,1.56,.16,12),new THREE.MeshStandardMaterial({color:0x496573,roughness:.94,flatShading:true})); foothill.rotation.x=Math.PI/2; foothill.position.z=.08; foothill.receiveShadow=true; group.add(foothill);
-  const base=new THREE.Mesh(new THREE.ConeGeometry(1.46,3.02,12),new THREE.MeshStandardMaterial({color:0x58788a,roughness:.92,flatShading:true})); base.rotation.x=Math.PI/2; base.position.z=1.49; base.castShadow=true; group.add(base);
+  const foothill=new THREE.Mesh(new THREE.CylinderGeometry(1.43,1.56,.16,12),new THREE.MeshStandardMaterial({color:0x344d4b,roughness:.94,flatShading:true})); foothill.rotation.x=Math.PI/2; foothill.position.z=.08; foothill.receiveShadow=true; group.add(foothill);
+  const base=new THREE.Mesh(new THREE.ConeGeometry(1.46,3.02,12),new THREE.MeshStandardMaterial({color:0x526d70,roughness:.92,flatShading:true})); base.rotation.x=Math.PI/2; base.position.z=1.49; base.castShadow=true; group.add(base);
   const snow=new THREE.Mesh(new THREE.ConeGeometry(.67,1.08,12),new THREE.MeshStandardMaterial({color:0xf5f4ed,roughness:.86,flatShading:true})); snow.rotation.x=Math.PI/2; snow.position.z=2.51; snow.castShadow=true; group.add(snow); mapGroup.add(group);
 }
 function makeKanto() {
   makeHexTerrain();
   addFuji();
-  [[138.88,36.72,.72],[139.16,36.92,.65],[139.52,37.0,.74],[139.9,37.02,.58],[140.27,36.88,.58],[138.88,36.15,.5],[139.02,35.72,.43],[140.25,35.32,.36]].forEach(m=>addMountain(...m));
+  [[138.88,36.72,.78],[139.16,36.92,.69],[139.52,37.0,.76],[139.9,37.02,.62],[140.27,36.88,.6],[138.88,36.15,.52],[139.02,35.72,.44],[140.25,35.32,.37]].forEach(m=>addMountain(...m));
 }
 function makeNumberBadge(num,height=1.18) {
-  const label=document.createElement('canvas'); label.width=128; label.height=64; const context=label.getContext('2d');
-  context.fillStyle='rgba(55,38,31,.94)'; context.beginPath(); context.roundRect(22,9,84,46,18); context.fill();
-  context.strokeStyle='#f2cf70'; context.lineWidth=4; context.stroke(); context.fillStyle='#fffaf0'; context.font='700 29px Georgia'; context.textAlign='center'; context.textBaseline='middle'; context.fillText(String(num),64,33);
-  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(label),transparent:true,depthTest:false})); sprite.scale.set(.62,.31,1); sprite.position.z=height; sprite.renderOrder=4; return sprite;
+  const label=document.createElement('canvas'); label.width=192; label.height=96; const context=label.getContext('2d');
+  context.shadowColor='rgba(20,11,8,.45)'; context.shadowBlur=12; context.shadowOffsetY=5;
+  context.fillStyle='rgba(40,25,22,.97)'; context.beginPath(); context.roundRect(38,14,116,62,25); context.fill();
+  context.shadowColor='transparent'; context.strokeStyle='#d9ad56'; context.lineWidth=4; context.stroke();
+  context.fillStyle='#f7ead1'; context.font='700 38px Iowan Old Style, Georgia'; context.textAlign='center'; context.textBaseline='middle'; context.fillText(String(num).padStart(2,'0'),96,47);
+  const texture=new THREE.CanvasTexture(label); texture.colorSpace=THREE.SRGBColorSpace;
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false})); sprite.scale.set(.76,.38,1); sprite.position.z=height; sprite.renderOrder=8; return sprite;
 }
 function reserveTempleCell(position,occupied) {
   let chosen=null, best=Infinity;
@@ -306,19 +336,81 @@ function makeMarkers() {
     group.scale.setScalar(baseScale); group.userData.temple=temple; group.userData.baseScale=baseScale; group.userData.variant=variant; mapGroup.add(group); markers.push(group);
   });
 }
+function seeded(index) { const value=Math.sin(index*9283.17+17.31)*43758.5453; return value-Math.floor(value); }
+function makeForest() {
+  const candidates=terrainCells.filter((cell,index)=>!cell.water && cell.top>.46 && cell.top<1 && seeded(index)>.41 &&
+    ![...markerPositions.values()].some(p=>(p.x-cell.x)**2+(p.y-cell.y)**2<.46) &&
+    !sceneryPositions.some(p=>(p.x-cell.x)**2+(p.y-cell.y)**2<.58));
+  const count=Math.min(candidates.length,145), trunkGeometry=new THREE.CylinderGeometry(.025,.035,.24,5), crownGeometry=new THREE.ConeGeometry(.13,.42,6);
+  trunkGeometry.rotateX(Math.PI/2); crownGeometry.rotateX(Math.PI/2);
+  const trunks=new THREE.InstancedMesh(trunkGeometry,new THREE.MeshStandardMaterial({color:0x51392d,roughness:1}),count);
+  const crowns=new THREE.InstancedMesh(crownGeometry,new THREE.MeshStandardMaterial({color:0xffffff,roughness:.96,flatShading:true}),count);
+  const matrix=new THREE.Matrix4(), colour=new THREE.Color(), treeColours=[0x263f35,0x34543e,0x486246,0x6d6c3f,0x7b5738];
+  candidates.slice(0,count).forEach((cell,index)=>{
+    const size=.72+seeded(index+401)*.7,dx=(seeded(index+71)-.5)*.22,dy=(seeded(index+137)-.5)*.22;
+    matrix.compose(new THREE.Vector3(cell.x+dx,cell.y+dy,cell.top+.1*size),new THREE.Quaternion(),new THREE.Vector3(size,size,size)); trunks.setMatrixAt(index,matrix);
+    matrix.compose(new THREE.Vector3(cell.x+dx,cell.y+dy,cell.top+.34*size),new THREE.Quaternion(),new THREE.Vector3(size,size,size)); crowns.setMatrixAt(index,matrix); crowns.setColorAt(index,colour.setHex(treeColours[Math.floor(seeded(index+233)*treeColours.length)]));
+  });
+  trunks.castShadow=true; crowns.castShadow=true; crowns.instanceColor.needsUpdate=true; mapGroup.add(trunks,crowns);
+}
+function makeTextSprite(text,subtle=false) {
+  const label=document.createElement('canvas'); label.width=512; label.height=96; const context=label.getContext('2d');
+  context.textAlign='center'; context.textBaseline='middle'; context.font=subtle?'500 28px SFMono-Regular, monospace':'600 34px Iowan Old Style, Georgia'; context.letterSpacing=subtle?'7px':'2px';
+  context.fillStyle=subtle?'rgba(238,224,194,.62)':'rgba(41,30,25,.72)'; context.fillText(text,256,48);
+  const texture=new THREE.CanvasTexture(label); texture.colorSpace=THREE.SRGBColorSpace;
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthWrite:false,depthTest:false})); sprite.scale.set(3.1,.58,1); sprite.renderOrder=3; return sprite;
+}
+function makeMapLabels() {
+  [[-7.75,-5.03,3.1,'富士山 · MT FUJI',false],[-.45,-2.35,.45,'TOKYO BAY',true],[-.6,5.65,1.1,'JŌSHŪ MOUNTAINS',true]].forEach(([x,y,z,text,subtle])=>{
+    const label=makeTextSprite(text,subtle); label.position.set(x,y,z); mapGroup.add(label);
+  });
+}
+function makeClouds() {
+  const lightMaterial=new THREE.MeshStandardMaterial({color:0xffeed4,transparent:true,opacity:.58,roughness:1,depthWrite:false});
+  const shadeMaterial=new THREE.MeshStandardMaterial({color:0x809697,transparent:true,opacity:.22,roughness:1,depthWrite:false});
+  const puffGeometry=new THREE.SphereGeometry(1,16,10);
+  [[-8,3.8,5.8,.9],[6.8,4.7,5.2,.72],[8,-3.4,4.5,.6]].forEach(([x,y,z,size],cloudIndex)=>{
+    const group=new THREE.Group();
+    [[-.62,.02,.12,.62],[0,0,.2,1],[.62,.01,.1,.68],[-.3,.05,.43,.76],[.32,.04,.4,.82],[-.02,-.08,.62,.58]].forEach(([dx,dy,dz,s],puffIndex)=>{
+      const shadow=new THREE.Mesh(puffGeometry,shadeMaterial); shadow.scale.set(.72*size*s,.47*size*s,.3*size*s); shadow.position.set(dx*size,dy*size,dz*size-.12*size); group.add(shadow);
+      const puff=new THREE.Mesh(puffGeometry,lightMaterial); puff.scale.set(.66*size*s,.5*size*s,.5*size*s); puff.position.set(dx*size,dy*size,dz*size+(puffIndex>2?.06:0)); group.add(puff);
+    });
+    group.position.set(x,y,z); group.userData.speed=.00003+cloudIndex*.000008; group.userData.origin=x; scene.add(group); clouds.push(group);
+  });
+}
+function makeSelectionAura() {
+  selectionAura=new THREE.Group(); selectionAura.visible=false;
+  const outer=new THREE.Mesh(new THREE.TorusGeometry(.48,.018,8,48),new THREE.MeshBasicMaterial({color:0xffd77b,transparent:true,opacity:.9,depthTest:false})); outer.position.z=.08;
+  const inner=new THREE.Mesh(new THREE.TorusGeometry(.34,.009,8,40),new THREE.MeshBasicMaterial({color:0xf6e3ad,transparent:true,opacity:.64,depthTest:false})); inner.position.z=.09;
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(.05,.22,1.7,16,1,true),new THREE.MeshBasicMaterial({color:0xf6cc73,transparent:true,opacity:.1,side:THREE.DoubleSide,depthWrite:false})); beam.rotation.x=Math.PI/2; beam.position.z=.85;
+  selectionAura.add(outer,inner,beam); selectionAura.userData.outer=outer; selectionAura.userData.inner=inner; mapGroup.add(selectionAura);
+}
 function hit(e) { const rect=canvas.getBoundingClientRect(); pointer.x=((e.clientX-rect.left)/rect.width)*2-1; pointer.y=-((e.clientY-rect.top)/rect.height)*2+1; raycaster.setFromCamera(pointer,camera); return raycaster.intersectObjects(markers.flatMap(m=>m.children).filter(x=>x.userData.temple),false)[0]; }
-function onPointerMove(e) { const hitResult=hit(e); canvas.style.cursor=hitResult?'pointer':'grab'; if(hitResult){ const t=hitResult.object.userData.temple; tooltip.hidden=false; tooltip.innerHTML='<strong>#'+t.num+' · '+t.romaji+'</strong><span>'+t.city+' · '+t.day+'</span>'; tooltip.style.left=(e.clientX-stage.getBoundingClientRect().left+14)+'px'; tooltip.style.top=(e.clientY-stage.getBoundingClientRect().top+14)+'px'; } else tooltip.hidden=true; }
+function clearHover() { hovered=null; tooltip.hidden=true; canvas.style.cursor='grab'; updateMarkerScales(); }
+function updateMarkerScales() { markers.forEach(marker=>{const active=selected?.num===marker.userData.temple.num, over=hovered?.num===marker.userData.temple.num; marker.scale.setScalar(active?marker.userData.baseScale*1.32:over?marker.userData.baseScale*1.13:marker.userData.baseScale);}); }
+function onPointerMove(e) { const hitResult=hit(e); hovered=hitResult?.object.userData.temple||null; canvas.style.cursor=hitResult?'pointer':'grab'; updateMarkerScales(); if(hitResult){ const t=hitResult.object.userData.temple; tooltip.hidden=false; tooltip.innerHTML='<span class="tooltip-num">'+String(t.num).padStart(2,'0')+'</span><span><strong>'+t.romaji+'</strong><small>'+t.jp+'</small></span><em>'+t.city+' · '+t.day+'</em>'; const rect=stage.getBoundingClientRect(),x=e.clientX-rect.left+16,y=e.clientY-rect.top+16; tooltip.style.left=Math.min(x,rect.width-220)+'px'; tooltip.style.top=Math.min(y,rect.height-94)+'px'; } else tooltip.hidden=true; }
 function onClick(e) { const h=hit(e); if(!h)return; select(h.object.userData.temple); }
-function select(t) { selected=t; markers.forEach(m=>{ const active=m.userData.temple.num===t.num; m.scale.setScalar(active ? 1.02 : m.userData.baseScale); }); document.querySelectorAll('#atlasIndex button').forEach(button=>button.classList.toggle('active', Number(button.dataset.temple)===t.num)); focus.textContent='#'+t.num+' · '+t.romaji+' — '+t.city+' · '+t.day; mapLink.href=t.maps; const p=markerPositions.get(t.num)||toWorld(sourceCoord(t)); targetGoal.set(p.x,p.y,p.z); }
+function select(t) {
+  selected=t; updateMarkerScales();
+  let activeButton;
+  document.querySelectorAll('#atlasIndex button').forEach(button=>{const active=Number(button.dataset.temple)===t.num; button.classList.toggle('active',active); if(active)activeButton=button;});
+  activeButton?.scrollIntoView({block:'nearest',behavior:reduceMotion?'auto':'smooth'});
+  focus.textContent='#'+t.num+' · '+t.romaji+' — '+t.city+' · '+t.day; mapLink.href=t.maps;
+  ordinal.textContent=String(t.num).padStart(2,'0'); kicker.textContent=t.jp+' · '+t.day.toUpperCase(); templeName.textContent=t.romaji; templeMeta.textContent=t.city+' · '+t.hours;
+  const p=markerPositions.get(t.num)||toWorld(sourceCoord(t)); targetGoal.set(p.x,p.y,p.z); selectionAura.position.copy(p); selectionAura.position.z+=.02; selectionAura.visible=true;
+}
 function stepTemple(direction) { const currentIndex=selected?templeOrder.findIndex(temple=>temple.num===selected.num):(direction>0?-1:0); select(templeOrder[(currentIndex+direction+templeOrder.length)%templeOrder.length]); }
 function zoomBy(amount) { camera.zoom = THREE.MathUtils.clamp(camera.zoom * amount, controls.minZoom, controls.maxZoom); camera.updateProjectionMatrix(); }
-function resetView() { controls.reset(); targetGoal.copy(controls.target); selected=null; markers.forEach(m=>m.scale.setScalar(m.userData.baseScale)); document.querySelectorAll('#atlasIndex button').forEach(button=>button.classList.remove('active')); focus.textContent='Select a temple marker to begin.'; mapLink.href='#'; }
-function resize(){ const w=stage.clientWidth,h=stage.clientHeight, aspect=w/h; const halfHeight=Math.max(5.75,9.25/aspect); camera.left=-halfHeight*aspect; camera.right=halfHeight*aspect; camera.top=halfHeight; camera.bottom=-halfHeight; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
+function onKeyDown(event) { if(event.key==='ArrowRight'){event.preventDefault(); stepTemple(1);} if(event.key==='ArrowLeft'){event.preventDefault(); stepTemple(-1);} if(event.key==='Escape')resetView(); }
+function resetView() { controls.reset(); targetGoal.copy(controls.target); selected=null; selectionAura.visible=false; updateMarkerScales(); document.querySelectorAll('#atlasIndex button').forEach(button=>button.classList.remove('active')); focus.textContent='Select a temple marker to begin.'; mapLink.href='#'; ordinal.textContent='巡礼'; kicker.textContent='BANDŌ KANNON PILGRIMAGE'; templeName.textContent='Thirty-three sacred places'; templeMeta.textContent='Choose a temple, or follow the route with the arrow controls.'; }
+function resize(){ const w=stage.clientWidth,h=stage.clientHeight, aspect=w/h; const halfHeight=aspect<.8?10.3:Math.max(5.75,9.25/aspect); camera.left=-halfHeight*aspect; camera.right=halfHeight*aspect; camera.top=halfHeight; camera.bottom=-halfHeight; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
 function animate(){
   raf=requestAnimationFrame(animate);
   const now=performance.now();
   if(!reduceMotion){
     waterMaterial.uniforms.uTime.value=now*.001;
+    clouds.forEach(cloud=>{cloud.position.x=cloud.userData.origin+Math.sin(now*cloud.userData.speed)*.8;});
+    if(selectionAura.visible){selectionAura.rotation.z=now*.00045; selectionAura.userData.inner.rotation.z=-now*.0012; selectionAura.userData.outer.material.opacity=.68+Math.sin(now*.003)*.2;}
   }
   controls.target.lerp(targetGoal,.08); controls.update(); renderer.render(scene,camera);
 }

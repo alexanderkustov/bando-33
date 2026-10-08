@@ -8,15 +8,19 @@
 <link rel="stylesheet" href="styles.css"/>
 </head>
 <body class="atlas-page">
-<header>
-  <a class="back-link" href="index.html">← Back to tracker</a>
-  <h1>Bandō 33 · pilgrimage atlas</h1>
+<header class="atlas-masthead">
+  <a class="back-link" href="index.html">← Pilgrimage journal</a>
+  <div class="atlas-title-lockup">
+    <p>坂東三十三観音</p>
+    <h1>Bandō pilgrimage atlas</h1>
+  </div>
+  <p class="atlas-edition">KANTŌ · AUTUMN 2026</p>
 </header>
 <main>
   <section class="atlas" aria-label="Bandō 33 Kantō atlas">
     <div class="atlas-head">
       <div>
-        <p class="eyebrow">BANDŌ 33 · KANTŌ ATLAS</p>
+        <p class="eyebrow">THE THIRTY-THREE STATIONS</p>
       </div>
       <div class="atlas-stats" aria-label="Atlas statistics">
         <span><strong id="atlasVisibleCount">33</strong><small>temples</small></span>
@@ -29,16 +33,28 @@
         <canvas id="atlasCanvas" aria-label="Interactive three-dimensional pilgrimage landscape of the Bandō 33 temples"></canvas>
         <div class="atlas-loading" id="atlasLoading">Loading the mountain path…</div>
         <div class="atlas-tooltip" id="atlasTooltip" hidden></div>
+        <div class="atlas-map-title" aria-hidden="true">
+          <strong>KANTŌ</strong>
+        </div>
+        <div class="atlas-place-card" id="atlasPlaceCard" aria-live="polite">
+          <div class="place-seal" id="atlasOrdinal">巡礼</div>
+          <div>
+            <span class="place-kicker" id="atlasKicker">BANDŌ KANNON PILGRIMAGE</span>
+            <h2 id="atlasTempleName">Thirty-three sacred places</h2>
+            <p id="atlasTempleMeta">Choose a temple, or follow the route with the arrow controls.</p>
+          </div>
+        </div>
         <div class="atlas-controls" aria-label="Map controls">
           <button type="button" id="atlasPrev" aria-label="Previous temple" title="Previous temple">←</button>
           <button type="button" id="atlasNext" aria-label="Next temple" title="Next temple">→</button>
           <button type="button" id="atlasZoomOut" aria-label="Zoom out">−</button>
           <button type="button" id="atlasZoomIn" aria-label="Zoom in">+</button>
-          <button type="button" id="atlasReset" aria-label="Reset atlas view">Reset</button>
+          <button type="button" id="atlasReset" aria-label="Reset atlas view">Whole route</button>
         </div>
+        <p class="atlas-help">DRAG TO ORBIT · SCROLL TO ZOOM · SELECT A TEMPLE</p>
       </div>
       <aside class="atlas-index" aria-label="Temple index">
-        <div class="index-head"><strong>33 temples</strong><span>in pilgrimage order</span></div>
+        <div class="index-head"><strong>巡礼の道 · The route</strong><span>in pilgrimage order</span></div>
         <div id="atlasIndex"></div>
       </aside>
     </div>

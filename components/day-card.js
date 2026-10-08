@@ -1,3 +1,5 @@
+import { mountTemplePreview } from './temple-preview.js';
+
 export function renderDayCard({ day, temples, meta, filter, state, fares, recheck, onToggle }) {
   const section = document.createElement('section');
   section.className = 'day';
@@ -6,7 +8,7 @@ export function renderDayCard({ day, temples, meta, filter, state, fares, rechec
   section.dataset.date = meta ? `${Number(meta.iso.slice(5, 7))}月${Number(meta.iso.slice(8, 10))}日` : day;
 
   const heading = document.createElement('h2');
-  heading.textContent = meta ? '巡礼' : day;
+  heading.textContent = meta ? meta.day : day;
   section.appendChild(heading);
 
   if (meta) {
@@ -19,13 +21,6 @@ export function renderDayCard({ day, temples, meta, filter, state, fares, rechec
     mapButton.title = 'Open map · ' + meta.day + ' · ' + temples.length + ' stops';
     mapButton.setAttribute('aria-label', 'Open map · ' + meta.day + ' · ' + temples.length + ' stops');
     section._mapButton = mapButton;
-  }
-
-  if (meta) {
-    const box = document.createElement('div');
-    box.className = 'travel-box';
-    box.innerHTML = '<strong>Map starts at:</strong> ' + meta.origin + (meta.blurb ? '<br>' + meta.blurb : '');
-    section.appendChild(box);
   }
 
   for (const temple of temples) {
@@ -42,21 +37,38 @@ export function renderDayCard({ day, temples, meta, filter, state, fares, rechec
     const travelLine = temple.travel || temple.today || '';
     const fromShinjuku = temple.fromShinjuku || '';
     card.innerHTML = `
-      <input class="check" type="checkbox" ${stamped ? 'checked' : ''} aria-label="Stamped #${temple.num}"/>
-      <div>
-        ${warning ? `<div class="recheck-badge">⚠ ${warning}</div>` : ''}
-        <span class="num">#${temple.num}</span>
-        <div class="name">${temple.romaji}<span class="jp">${temple.jp}</span></div>
-        <div class="meta">${temple.city}${alt}</div>
-        ${temple.notes ? `<div class="notes">${temple.notes}</div>` : ''}
-        <div class="hours ${hoursClass}">Stamp: ${temple.hours || 'Verify on site'}</div>
-        ${temple.arriveBy ? `<div class="meta">Be there by <strong>${temple.arriveBy}</strong></div>` : ''}
-        ${travelLine ? `<div class="travel">Today: ${travelLine}</div>` : ''}
-        ${fromShinjuku ? `<div class="travel">From Shinjuku: ${fromShinjuku}</div>` : ''}
-        ${fares[temple.num] ? `<div class="fare">Estimated transport: ${fares[temple.num]}</div>` : ''}
+      <div class="temple-card-top">
+        <span class="num">${String(temple.num).padStart(2,'0')}</span>
+        <label class="stamp-toggle">
+          <input class="check" type="checkbox" ${stamped ? 'checked' : ''} aria-label="Stamped #${temple.num}"/>
+          <span>${stamped ? 'Stamped' : 'Mark stamped'}</span>
+        </label>
       </div>
-      <div class="actions"><a class="btn" href="${temple.maps}" target="_blank" rel="noopener">Map  ↗</a></div>`;
+      <h3 class="name">${temple.romaji}<span class="jp">${temple.jp}</span></h3>
+      ${temple.alt ? `<p class="temple-alt">Also known as ${temple.alt}</p>` : ''}
+      <div class="temple-preview-frame">
+        <canvas class="temple-preview" width="320" height="220" role="img" aria-label="Rotating miniature of ${temple.romaji}"></canvas>
+      </div>
+      <div class="temple-facts">
+        <div class="temple-fact temple-location"><span class="fact-icon" aria-hidden="true">⌖</span><span>${temple.city}</span></div>
+        ${warning ? `<div class="temple-fact temple-warning"><span class="fact-icon" aria-hidden="true">!</span><span>${warning}</span></div>` : ''}
+        ${temple.notes ? `<div class="temple-fact temple-warning"><span class="fact-icon" aria-hidden="true">!</span><span>${temple.notes}</span></div>` : ''}
+        <div class="temple-fact hours ${hoursClass}"><span class="fact-icon stamp-icon" aria-hidden="true">印</span><span><strong>Stamp</strong> · ${temple.hours || 'Verify on site'}</span></div>
+      </div>
+      <div class="actions"><a class="btn" href="${temple.maps}" target="_blank" rel="noopener">Open temple map  ↗</a></div>
+      <details class="temple-more">
+        <summary>More information &amp; journey</summary>
+        <div class="temple-more-panel">
+          ${meta ? `<div class="journey-detail"><span>Map starts at</span><p>${meta.origin}</p></div>` : ''}
+          ${meta?.blurb ? `<div class="journey-overview">${meta.blurb}</div>` : ''}
+          ${temple.arriveBy ? `<div class="journey-detail"><span>Be there by</span><p>${temple.arriveBy}</p></div>` : ''}
+          ${travelLine ? `<div class="journey-detail"><span>Today</span><p>${travelLine}</p></div>` : ''}
+          ${fromShinjuku ? `<div class="journey-detail"><span>From Shinjuku</span><p>${fromShinjuku}</p></div>` : ''}
+          ${fares[temple.num] ? `<div class="journey-detail"><span>Estimated transport</span><p>${fares[temple.num]}</p></div>` : ''}
+        </div>
+      </details>`;
     card.querySelector('.check').addEventListener('change', (event) => onToggle(temple.num, event.target.checked));
+    mountTemplePreview(card.querySelector('.temple-preview'),temple);
     section.appendChild(card);
   }
 
