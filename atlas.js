@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { TEMPLES } from './data/itinerary.js';
+import { TEMPLES, DAYS } from './data/itinerary.js';
+import { renderDaylightCycle } from './components/daylight-cycle.js';
 
 const canvas = document.getElementById('atlasCanvas');
 const stage = document.getElementById('atlasStage');
@@ -12,6 +13,7 @@ const ordinal = document.getElementById('atlasOrdinal');
 const kicker = document.getElementById('atlasKicker');
 const templeName = document.getElementById('atlasTempleName');
 const templeMeta = document.getElementById('atlasTempleMeta');
+const skyClock = document.getElementById('atlasSkyClock');
 const done = new Set();
 const colours = {
   ink: 0x241a18, vermilion: 0xa93d2d, pine: 0x314e42, paper: 0xefe4cb,
@@ -72,7 +74,7 @@ function init() {
   makeOcean();
   scene.add(mapGroup); makeKanto(); makeMarkers(); makeForest(); makeMapLabels(); makeClouds(); makeSelectionAura(); raycaster = new THREE.Raycaster(); pointer = new THREE.Vector2();
   canvas.addEventListener('pointermove', onPointerMove); canvas.addEventListener('pointerleave', clearHover); canvas.addEventListener('click', onClick); window.addEventListener('resize', resize); window.addEventListener('keydown', onKeyDown); document.getElementById('atlasReset').addEventListener('click', resetView); document.getElementById('atlasZoomIn').addEventListener('click', () => zoomBy(1.25)); document.getElementById('atlasZoomOut').addEventListener('click', () => zoomBy(.8)); document.getElementById('atlasPrev').addEventListener('click', () => stepTemple(-1)); document.getElementById('atlasNext').addEventListener('click', () => stepTemple(1)); window.addEventListener('bando:progress', updateAtlasProgress);
-  document.getElementById('atlasVisibleCount').textContent = TEMPLES.length; buildTempleIndex(); updateAtlasProgress(); resize(); loading.remove(); animate();
+  document.getElementById('atlasVisibleCount').textContent = TEMPLES.length; buildTempleIndex(); updateAtlasProgress(); renderDaylightCycle(skyClock, DAYS[0].iso, { compact: true }); resize(); loading.remove(); animate();
 }
 function makeSkyTexture() {
   const sky=document.createElement('canvas'); sky.width=1024; sky.height=1024; const context=sky.getContext('2d');
@@ -397,12 +399,13 @@ function select(t) {
   activeButton?.scrollIntoView({block:'nearest',behavior:reduceMotion?'auto':'smooth'});
   focus.textContent='#'+t.num+' · '+t.romaji+' — '+t.city+' · '+t.day; mapLink.href=t.maps;
   ordinal.textContent=String(t.num).padStart(2,'0'); kicker.textContent=t.jp+' · '+t.day.toUpperCase(); templeName.textContent=t.romaji; templeMeta.textContent=t.city+' · '+t.hours;
+  const day=DAYS.find(candidate=>candidate.day===t.day); if(day)renderDaylightCycle(skyClock,day.iso,{compact:true});
   const p=markerPositions.get(t.num)||toWorld(sourceCoord(t)); targetGoal.set(p.x,p.y,p.z); selectionAura.position.copy(p); selectionAura.position.z+=.02; selectionAura.visible=true;
 }
 function stepTemple(direction) { const currentIndex=selected?templeOrder.findIndex(temple=>temple.num===selected.num):(direction>0?-1:0); select(templeOrder[(currentIndex+direction+templeOrder.length)%templeOrder.length]); }
 function zoomBy(amount) { camera.zoom = THREE.MathUtils.clamp(camera.zoom * amount, controls.minZoom, controls.maxZoom); camera.updateProjectionMatrix(); }
 function onKeyDown(event) { if(event.key==='ArrowRight'){event.preventDefault(); stepTemple(1);} if(event.key==='ArrowLeft'){event.preventDefault(); stepTemple(-1);} if(event.key==='Escape')resetView(); }
-function resetView() { controls.reset(); targetGoal.copy(controls.target); selected=null; selectionAura.visible=false; updateMarkerScales(); document.querySelectorAll('#atlasIndex button').forEach(button=>button.classList.remove('active')); focus.textContent='Select a temple marker to begin.'; mapLink.href='#'; ordinal.textContent='巡礼'; kicker.textContent='BANDŌ KANNON PILGRIMAGE'; templeName.textContent='Thirty-three sacred places'; templeMeta.textContent='Choose a temple, or follow the route with the arrow controls.'; }
+function resetView() { controls.reset(); targetGoal.copy(controls.target); selected=null; selectionAura.visible=false; updateMarkerScales(); document.querySelectorAll('#atlasIndex button').forEach(button=>button.classList.remove('active')); focus.textContent='Select a temple marker to begin.'; mapLink.href='#'; ordinal.textContent='巡礼'; kicker.textContent='BANDŌ KANNON PILGRIMAGE'; templeName.textContent='Thirty-three sacred places'; templeMeta.textContent='Choose a temple, or follow the route with the arrow controls.'; renderDaylightCycle(skyClock,DAYS[0].iso,{compact:true}); }
 function resize(){ const w=stage.clientWidth,h=stage.clientHeight, aspect=w/h; const halfHeight=aspect<.8?10.3:Math.max(5.75,9.25/aspect); camera.left=-halfHeight*aspect; camera.right=halfHeight*aspect; camera.top=halfHeight; camera.bottom=-halfHeight; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
 function animate(){
   raf=requestAnimationFrame(animate);

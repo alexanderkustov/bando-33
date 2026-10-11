@@ -1,6 +1,6 @@
 # Bandō 33 tracker
 
-A static tracker and Three.js atlas for the Bandō 33 pilgrimage, planned from Shinjuku and nearby overnight bases. It includes temple order, opening-hour notes, Google Maps routes, travel guidance, Japanese phrases for the nōkyō-jiku, browser-local progress tracking, and day-specific prompts for ChatGPT itinerary optimisation.
+A static tracker and Three.js atlas for the Bandō 33 pilgrimage, planned from Shinjuku and nearby overnight bases. It includes temple order, opening-hour notes, Google Maps routes, travel guidance, Japanese phrases for the nōkyō-jiku, browser-local progress and field-plan tracking, daylight windows, and day-specific prompts for ChatGPT itinerary optimisation.
 
 ## Structure
 
@@ -9,7 +9,9 @@ A static tracker and Three.js atlas for the Bandō 33 pilgrimage, planned from S
 - `styles.css` — visual design system and responsive layout.
 - `app.js` — application state, filters, progress, URL queries, and event handling.
 - `data/itinerary.js` — calendar, temple, fare, and route data.
+- `data/daylight.js` — approximate sunrise, sunset, civil-dusk, and lunar-cycle data.
 - `components/day-card.js` — reusable day-panel and temple-card renderer.
+- `components/daylight-cycle.js` — shared daylight display for the tracker and atlas.
 - `shan-shui-reference.html` — local Shan Shui background renderer.
 - `atlas.js` — interactive Three.js route atlas and marker selection.
 - `package.json` — pnpm metadata and lightweight validation scripts.
@@ -42,6 +44,8 @@ http://localhost:8000/?day=2026-11-10
 
 The “Ask ChatGPT” control copies a structured prompt for the selected day. The page also exposes its data as `window.BANDO33` for lightweight integrations.
 
+Use “Change this day on the fly” to save a temporary start point, temple order, and field note for a date. These browser-local changes update that day’s map and ChatGPT prompt without altering the published itinerary.
+
 ## Deploy with Surge
 
 Install Surge if needed and authenticate, then build and publish the production bundle:
@@ -56,6 +60,8 @@ The root `CNAME` file records the intended Surge hostname. Keep the site as a st
 ## Notes
 
 - Progress is stored in the browser's `localStorage` and is not synced between devices.
+- Field-plan adjustments are also browser-local. Restore the published plan from the same day editor.
+- Daylight times are approximate for the planned temple area; terrain and local conditions can shorten usable light.
 - Route times and transport details are planning estimates. Check current timetables, fares, temple hours, closures, and weather before travelling.
 - Some remote stops are marked as requiring a taxi or hire car; the route links are useful for navigation but do not guarantee public-transport availability.
 

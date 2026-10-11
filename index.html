@@ -27,6 +27,34 @@
   </div>
 </header>
 <main>
+  <section class="today-box" id="todayBox">
+    <h2>Today’s map</h2>
+    <p class="meta">Pick the day you’re about to start — opens Google Maps with every stop in order.</p>
+    <select id="dayPick" aria-label="Choose day"></select>
+    <div id="todaySummary" class="meta"></div>
+    <div id="todayDaylight"></div>
+    <div class="today-actions">
+      <a class="btn primary mapday icon" id="todayMap" href="#" target="_blank" rel="noopener">↗</a>
+      <button type="button" class="btn" id="copyPrompt">Ask ChatGPT</button>
+    </div>
+    <details class="day-adjuster" id="dayAdjuster">
+      <summary>Change this day on the fly</summary>
+      <form id="dayPlanForm">
+        <label for="dayOrigin">Start from</label>
+        <input id="dayOrigin" name="origin" autocomplete="off"/>
+        <label for="dayStops">Temple order</label>
+        <input id="dayStops" name="stops" inputmode="numeric" autocomplete="off" aria-describedby="dayStopsHelp"/>
+        <small id="dayStopsHelp">Use temple numbers separated by commas, for example 24, 25, 26.</small>
+        <label for="dayNote">Field note</label>
+        <textarea id="dayNote" name="note" rows="3" placeholder="Weather, train, hotel, or anything to remember…"></textarea>
+        <div class="day-plan-actions">
+          <button type="submit" class="primary">Save this day</button>
+          <button type="button" id="restoreDay">Restore planned day</button>
+        </div>
+        <p class="day-plan-status" id="dayPlanStatus" role="status"></p>
+      </form>
+    </details>
+  </section>
   <nav class="week-nav" id="weekNav" aria-label="Itinerary weeks"></nav>
   <div id="list"></div>
   <section class="total-box" id="totalBox">
@@ -34,7 +62,7 @@
     <p id="totalText">Calculating…</p>
   </section>
   <details class="trip-notes">
-    <summary>Trip notes, map picker, and research sources</summary>
+    <summary>Trip notes and research sources</summary>
     <section class="note compact-plan">
       <h2>Compressed plan · finish by 17 Nov</h2>
       <p><strong>Use only with a hire car and overnight hubs.</strong> The original 3–20 Nov plan remains the default; this is the faster alternative to follow if needed.</p>
@@ -62,16 +90,6 @@
         <dt>Ikura desu ka? · Arigatō gozaimasu.</dt>
         <dd>How much? · Thank you.</dd>
       </dl>
-    </section>
-    <section class="today-box" id="todayBox">
-      <h2>Today’s map</h2>
-      <p class="meta">Pick the day you’re about to start — opens Google Maps with every stop in order.</p>
-      <select id="dayPick" aria-label="Choose day"></select>
-      <div id="todaySummary" class="meta"></div>
-      <div class="today-actions">
-        <a class="btn primary mapday icon" id="todayMap" href="#" target="_blank" rel="noopener">↗</a>
-        <button type="button" class="btn" id="copyPrompt">Ask ChatGPT</button>
-      </div>
     </section>
     <section class="note">
       <h2>List source</h2>
