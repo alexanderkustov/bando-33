@@ -58,7 +58,7 @@ function updateAtlasProgress(event) {
 const toWorld = ([lon, lat]) => new THREE.Vector3((lon - 139.9) * 6.2, (lat - 35.95) * 5.2, 0);
 const kantoOutline = [[138.72,36.78],[139.22,37.08],[139.92,37.1],[140.38,36.96],[140.65,36.7],[140.78,36.3],[140.84,35.92],[140.9,35.72],[140.56,35.53],[140.43,35.25],[140.2,35.0],[139.87,34.95],[139.74,35.12],[139.78,35.31],[139.91,35.45],[140.03,35.53],[140.0,35.63],[139.87,35.63],[139.72,35.5],[139.58,35.31],[139.47,35.22],[139.25,35.25],[138.62,35.23],[138.56,35.5],[138.82,35.8],[138.67,36.2]];
 
-let scene, camera, renderer, controls, raycaster, pointer, waterMaterial, markers = [], selected = null, hovered = null, selectionAura, raf;
+let scene, camera, renderer, controls, raycaster, pointer, waterMaterial, markers = [], selected = null, hovered = null, selectionAura, raf, followingSelection = false, viewTransition = null;
 const targetGoal = new THREE.Vector3(-.8,.45,.2);
 try { init(); } catch (error) { loading.textContent = 'The atlas could not load in this browser. The itinerary below is still fully available.'; console.error(error); }
 
@@ -68,7 +68,24 @@ function init() {
   // northern mountain edge recedes, matching the supplied board-game view.
   camera = new THREE.OrthographicCamera(-12, 12, 7, -7, .1, 100); camera.up.set(0,0,1); camera.position.set(-.8, -25, 20); camera.lookAt(-.8, .45, .2);
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(stage.clientWidth, stage.clientHeight); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.08;
-  controls = new OrbitControls(camera, canvas); controls.target.copy(targetGoal); controls.enableDamping=true; controls.dampingFactor=.075; controls.rotateSpeed=.46; controls.zoomSpeed=.7; controls.zoomToCursor=true; controls.enablePan=false; controls.minPolarAngle=THREE.MathUtils.degToRad(40); controls.maxPolarAngle=THREE.MathUtils.degToRad(64); controls.minZoom=.72; controls.maxZoom=3.6; controls.update(); const initialAzimuth=controls.getAzimuthalAngle(); controls.minAzimuthAngle=initialAzimuth-THREE.MathUtils.degToRad(78); controls.maxAzimuthAngle=initialAzimuth+THREE.MathUtils.degToRad(78); controls.saveState();
+  controls = new OrbitControls(camera, canvas);
+  controls.target.copy(targetGoal);
+  controls.enableDamping = true;
+  controls.dampingFactor = .075;
+  controls.rotateSpeed = .68;
+  controls.zoomSpeed = .9;
+  controls.panSpeed = .86;
+  controls.zoomToCursor = true;
+  controls.enablePan = true;
+  controls.screenSpacePanning = false;
+  controls.minPolarAngle = THREE.MathUtils.degToRad(18);
+  controls.maxPolarAngle = THREE.MathUtils.degToRad(88);
+  controls.minZoom = .55;
+  controls.maxZoom = 7.5;
+  controls.update();
+  controls.saveState();
+  controls.addEventListener('start', () => { followingSelection = false; viewTransition = null; });
+  controls.addEventListener('end', () => { targetGoal.copy(controls.target); });
   scene.add(new THREE.HemisphereLight(0xfff0d0, 0x243d3d, 2.35)); const sun = new THREE.DirectionalLight(0xffd29b, 4.4); sun.position.set(-11, -16, 24); sun.castShadow = true; sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-14; sun.shadow.camera.right=14; sun.shadow.camera.top=13; sun.shadow.camera.bottom=-13; sun.shadow.bias=-.00035; scene.add(sun);
   const fill=new THREE.DirectionalLight(0x8dc4c5,.8); fill.position.set(12,10,8); scene.add(fill);
   makeOcean();
@@ -91,9 +108,10 @@ function makeOcean() {
       varying float vWave;
       void main(){
         vec3 displaced=position;
-        float wave=sin(position.x*.44+uTime*.28)*.052
-          +sin(position.y*.71-uTime*.22)*.032
-          +sin((position.x+position.y)*.26+uTime*.16)*.024;
+        float wave=sin(position.x*.36+position.y*.12+uTime*.48)*.085
+          +sin(position.y*.58-position.x*.09-uTime*.36)*.052
+          +sin((position.x+position.y)*.92+uTime*.72)*.018
+          +sin(position.x*.11-position.y*.14+uTime*.19)*.035;
         displaced.z+=wave;
         vWave=wave;
         vec4 worldPosition=modelMatrix*vec4(displaced,1.0);
@@ -130,16 +148,20 @@ function makeOcean() {
       }
       void main(){
         vec2 p=vWorldPosition.xy;
-        float broad=.5+.5*sin(p.x*.14-p.y*.1+uTime*.022);
+        float broad=.5+.5*sin(p.x*.14-p.y*.1+uTime*.07);
+        float swellA=.5+.5*sin(p.x*.36+p.y*.12+uTime*.48);
+        float swellB=.5+.5*sin(p.y*.58-p.x*.09-uTime*.36);
+        float movingCrest=smoothstep(.76,.96,swellA*.63+swellB*.37);
+        float fineCrest=1.0-smoothstep(.0,.065,abs(sin((p.x+p.y)*.58+uTime*.34)-.94));
         vec2 flow=p*.43;
-        flow.x+=sin(p.y*.24+uTime*.38)*.075+sin(p.y*.08-uTime*.16)*.035;
-        flow.y+=sin(p.x*.2-uTime*.29)*.06+sin((p.x+p.y)*.09+uTime*.14)*.025;
-        flow+=vec2(uTime*.018,-uTime*.01);
+        flow.x+=sin(p.y*.24+uTime*.46)*.09+sin(p.y*.08-uTime*.2)*.045;
+        flow.y+=sin(p.x*.2-uTime*.37)*.075+sin((p.x+p.y)*.09+uTime*.18)*.035;
+        flow+=vec2(uTime*.045,-uTime*.026);
         vec3 cells=oceanHex(flow);
         float cellTone=smoothstep(.08,.94,cells.y);
         float hexCore=1.0-smoothstep(.012,.052,cells.x);
         float hexHalo=1.0-smoothstep(.025,.19,cells.x);
-        float innerLine=1.0-smoothstep(.0,.075,abs(sin((p.x-p.y)*.42+uTime*.09)-.88));
+        float innerLine=1.0-smoothstep(.0,.075,abs(sin((p.x-p.y)*.42+uTime*.23)-.88));
         vec3 deep=vec3(.045,.16,.22);
         vec3 jade=vec3(.13,.34,.4);
         vec3 mist=vec3(.44,.69,.72);
@@ -149,6 +171,8 @@ function makeOcean() {
         float edgePulse=.92+sin(p.x*.11+p.y*.08+uTime*.55)*.08;
         float translucentEdge=(hexHalo*(.075+broad*.035)+hexCore*(.07+cellTone*.025))*edgePulse;
         colour=mix(colour,mist,translucentEdge+innerLine*.018);
+        float crestLight=movingCrest*(.075+broad*.045)+fineCrest*.032+smoothstep(.075,.18,vWave)*.05;
+        colour=mix(colour,mist,crestLight);
         vec2 bayDistance=(p-vec2(-.45,-2.35))/vec2(1.75,2.25);
         float bayShallows=exp(-dot(bayDistance,bayDistance)*1.6);
         colour=mix(colour,vec3(.2,.43,.47),bayShallows*.16);
@@ -392,6 +416,28 @@ function clearHover() { hovered=null; tooltip.hidden=true; canvas.style.cursor='
 function updateMarkerScales() { markers.forEach(marker=>{const active=selected?.num===marker.userData.temple.num, over=hovered?.num===marker.userData.temple.num; marker.scale.setScalar(active?marker.userData.baseScale*1.32:over?marker.userData.baseScale*1.13:marker.userData.baseScale);}); }
 function onPointerMove(e) { const hitResult=hit(e); hovered=hitResult?.object.userData.temple||null; canvas.style.cursor=hitResult?'pointer':'grab'; updateMarkerScales(); if(hitResult){ const t=hitResult.object.userData.temple; tooltip.hidden=false; tooltip.innerHTML='<span class="tooltip-num">'+String(t.num).padStart(2,'0')+'</span><span><strong>'+t.romaji+'</strong><small>'+t.jp+'</small></span><em>'+t.city+' · '+t.day+'</em>'; const rect=stage.getBoundingClientRect(),x=e.clientX-rect.left+16,y=e.clientY-rect.top+16; tooltip.style.left=Math.min(x,rect.width-220)+'px'; tooltip.style.top=Math.min(y,rect.height-94)+'px'; } else tooltip.hidden=true; }
 function onClick(e) { const h=hit(e); if(!h)return; select(h.object.userData.temple); }
+function settleControlMotion() {
+  const damping=controls.enableDamping;
+  controls.enableDamping=false;
+  controls.update();
+  controls.enableDamping=damping;
+}
+function approachTemple(point) {
+  settleControlMotion();
+  const targetTo=point.clone(); targetTo.z+=.52;
+  const cameraOffset=camera.position.clone().sub(controls.target);
+  const positionTo=targetTo.clone().add(cameraOffset);
+  targetGoal.copy(targetTo); followingSelection=false;
+  if(reduceMotion){controls.target.copy(targetTo); camera.position.copy(positionTo); camera.zoom=4.2; camera.updateProjectionMatrix(); controls.update(); viewTransition=null; return;}
+  const distance=controls.target.distanceTo(targetTo);
+  viewTransition={
+    started:performance.now(), duration:Math.min(2400,1650+distance*65), easing:'inOut',
+    positionFrom:camera.position.clone(), positionTo,
+    targetFrom:controls.target.clone(), targetTo,
+    zoomFrom:camera.zoom, zoomTo:4.2,
+    arcHeight:Math.min(3.2,.9+distance*.14), delayedZoom:true
+  };
+}
 function select(t) {
   selected=t; updateMarkerScales();
   let activeButton;
@@ -400,12 +446,25 @@ function select(t) {
   focus.textContent='#'+t.num+' · '+t.romaji+' — '+t.city+' · '+t.day; mapLink.href=t.maps;
   ordinal.textContent=String(t.num).padStart(2,'0'); kicker.textContent=t.jp+' · '+t.day.toUpperCase(); templeName.textContent=t.romaji; templeMeta.textContent=t.city+' · '+t.hours;
   const day=DAYS.find(candidate=>candidate.day===t.day); if(day)renderDaylightCycle(skyClock,day.iso,{compact:true});
-  const p=markerPositions.get(t.num)||toWorld(sourceCoord(t)); targetGoal.set(p.x,p.y,p.z); selectionAura.position.copy(p); selectionAura.position.z+=.02; selectionAura.visible=true;
+  const p=markerPositions.get(t.num)||toWorld(sourceCoord(t)); approachTemple(p); selectionAura.position.copy(p); selectionAura.position.z+=.02; selectionAura.visible=true;
 }
 function stepTemple(direction) { const currentIndex=selected?templeOrder.findIndex(temple=>temple.num===selected.num):(direction>0?-1:0); select(templeOrder[(currentIndex+direction+templeOrder.length)%templeOrder.length]); }
-function zoomBy(amount) { camera.zoom = THREE.MathUtils.clamp(camera.zoom * amount, controls.minZoom, controls.maxZoom); camera.updateProjectionMatrix(); }
+function zoomBy(amount) { viewTransition=null; camera.zoom = THREE.MathUtils.clamp(camera.zoom * amount, controls.minZoom, controls.maxZoom); camera.updateProjectionMatrix(); }
 function onKeyDown(event) { if(event.key==='ArrowRight'){event.preventDefault(); stepTemple(1);} if(event.key==='ArrowLeft'){event.preventDefault(); stepTemple(-1);} if(event.key==='Escape')resetView(); }
-function resetView() { controls.reset(); targetGoal.copy(controls.target); selected=null; selectionAura.visible=false; updateMarkerScales(); document.querySelectorAll('#atlasIndex button').forEach(button=>button.classList.remove('active')); focus.textContent='Select a temple marker to begin.'; mapLink.href='#'; ordinal.textContent='巡礼'; kicker.textContent='BANDŌ KANNON PILGRIMAGE'; templeName.textContent='Thirty-three sacred places'; templeMeta.textContent='Choose a temple, or follow the route with the arrow controls.'; renderDaylightCycle(skyClock,DAYS[0].iso,{compact:true}); }
+function resetView() {
+  followingSelection=false;
+  if(reduceMotion){controls.reset(); viewTransition=null;}
+  else {
+    settleControlMotion();
+    viewTransition={
+      started:performance.now(), duration:1100, easing:'out',
+      positionFrom:camera.position.clone(), positionTo:controls.position0.clone(),
+      targetFrom:controls.target.clone(), targetTo:controls.target0.clone(),
+      zoomFrom:camera.zoom, zoomTo:controls.zoom0, arcHeight:0
+    };
+  }
+  targetGoal.copy(controls.target0); selected=null; selectionAura.visible=false; updateMarkerScales(); document.querySelectorAll('#atlasIndex button').forEach(button=>button.classList.remove('active')); focus.textContent='Select a temple marker to begin.'; mapLink.href='#'; ordinal.textContent='巡礼'; kicker.textContent='BANDŌ KANNON PILGRIMAGE'; templeName.textContent='Thirty-three sacred places'; templeMeta.textContent='Choose a temple, or follow the route with the arrow controls.'; renderDaylightCycle(skyClock,DAYS[0].iso,{compact:true});
+}
 function resize(){ const w=stage.clientWidth,h=stage.clientHeight, aspect=w/h; const halfHeight=aspect<.8?10.3:Math.max(5.75,9.25/aspect); camera.left=-halfHeight*aspect; camera.right=halfHeight*aspect; camera.top=halfHeight; camera.bottom=-halfHeight; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
 function animate(){
   raf=requestAnimationFrame(animate);
@@ -415,6 +474,23 @@ function animate(){
     clouds.forEach(cloud=>{cloud.position.x=cloud.userData.origin+Math.sin(now*cloud.userData.speed)*.8;});
     if(selectionAura.visible){selectionAura.rotation.z=now*.00045; selectionAura.userData.inner.rotation.z=-now*.0012; selectionAura.userData.outer.material.opacity=.68+Math.sin(now*.003)*.2;}
   }
-  controls.target.lerp(targetGoal,.08); controls.update(); renderer.render(scene,camera);
+  if(viewTransition){
+    const progress=Math.min((now-viewTransition.started)/viewTransition.duration,1);
+    const eased=viewTransition.easing==='inOut'
+      ? progress<.5 ? 4*progress*progress*progress : 1-Math.pow(-2*progress+2,3)/2
+      : 1-Math.pow(1-progress,3);
+    const zoomProgress=viewTransition.delayedZoom?Math.max(0,(progress-.18)/.82):progress;
+    const zoomEase=1-Math.pow(1-zoomProgress,3);
+    camera.position.lerpVectors(viewTransition.positionFrom,viewTransition.positionTo,eased);
+    camera.position.z+=Math.sin(Math.PI*progress)*(viewTransition.arcHeight||0);
+    controls.target.lerpVectors(viewTransition.targetFrom,viewTransition.targetTo,eased);
+    camera.zoom=THREE.MathUtils.lerp(viewTransition.zoomFrom,viewTransition.zoomTo,zoomEase);
+    camera.updateProjectionMatrix(); camera.lookAt(controls.target);
+    if(progress===1){viewTransition=null; controls.update();}
+  } else {
+    if(followingSelection){controls.target.lerp(targetGoal,.08); if(controls.target.distanceToSquared(targetGoal)<.0001){controls.target.copy(targetGoal); followingSelection=false;}}
+    controls.update();
+  }
+  renderer.render(scene,camera);
 }
 window.BANDO33_ATLAS = { selectTemple: select, reset: resetView };

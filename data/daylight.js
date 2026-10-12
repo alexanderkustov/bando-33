@@ -1,22 +1,18 @@
 export const DAYLIGHT = {
-  '2026-11-03': { sunrise: '06:04', sunset: '16:44', civilDusk: '17:11' },
-  '2026-11-04': { sunrise: '06:05', sunset: '16:45', civilDusk: '17:12' },
-  '2026-11-05': { sunrise: '06:08', sunset: '16:45', civilDusk: '17:12' },
-  '2026-11-06': { sunrise: '06:08', sunset: '16:43', civilDusk: '17:10' },
-  '2026-11-07': { sunrise: '06:10', sunset: '16:42', civilDusk: '17:09' },
-  '2026-11-08': { sunrise: '06:10', sunset: '16:40', civilDusk: '17:07' },
-  '2026-11-09': { sunrise: '06:15', sunset: '16:41', civilDusk: '17:08' },
-  '2026-11-10': { sunrise: '06:13', sunset: '16:37', civilDusk: '17:04' },
-  '2026-11-11': { sunrise: '06:15', sunset: '16:37', civilDusk: '17:04' },
-  '2026-11-12': { sunrise: '06:13', sunset: '16:34', civilDusk: '17:01' },
-  '2026-11-13': { sunrise: '06:14', sunset: '16:31', civilDusk: '16:58' },
-  '2026-11-14': { sunrise: '06:14', sunset: '16:31', civilDusk: '16:58' },
-  '2026-11-15': { sunrise: '06:16', sunset: '16:32', civilDusk: '16:59' },
-  '2026-11-16': { sunrise: '06:16', sunset: '16:31', civilDusk: '16:58' },
-  '2026-11-17': { sunrise: '06:14', sunset: '16:29', civilDusk: '16:56' },
-  '2026-11-18': { sunrise: '06:17', sunset: '16:31', civilDusk: '16:58' },
-  '2026-11-19': { sunrise: '06:18', sunset: '16:31', civilDusk: '16:58' },
-  '2026-11-20': { sunrise: '06:18', sunset: '16:31', civilDusk: '16:58' }
+  '2026-11-03': { sunrise: '06:05', sunset: '16:44', civilDusk: '17:11' },
+  '2026-11-04': { sunrise: '06:06', sunset: '16:43', civilDusk: '17:10' },
+  '2026-11-05': { sunrise: '06:10', sunset: '16:44', civilDusk: '17:11' },
+  '2026-11-06': { sunrise: '06:07', sunset: '16:43', civilDusk: '17:10' },
+  '2026-11-07': { sunrise: '06:08', sunset: '16:42', civilDusk: '17:09' },
+  '2026-11-08': { sunrise: '06:09', sunset: '16:41', civilDusk: '17:08' },
+  '2026-11-09': { sunrise: '06:11', sunset: '16:38', civilDusk: '17:05' },
+  '2026-11-10': { sunrise: '06:12', sunset: '16:36', civilDusk: '17:03' },
+  '2026-11-11': { sunrise: '06:11', sunset: '16:33', civilDusk: '17:00' },
+  '2026-11-12': { sunrise: '06:12', sunset: '16:33', civilDusk: '17:00' },
+  '2026-11-13': { sunrise: '06:13', sunset: '16:33', civilDusk: '17:00' },
+  '2026-11-14': { sunrise: '06:14', sunset: '16:33', civilDusk: '17:00' },
+  '2026-11-15': { sunrise: '06:15', sunset: '16:33', civilDusk: '17:00' },
+  '2026-11-16': { sunrise: '06:16', sunset: '16:32', civilDusk: '16:59' }
 };
 
 export function timeToMinutes(value) {

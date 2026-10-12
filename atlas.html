@@ -30,7 +30,7 @@
     </div>
     <div class="atlas-layout">
       <div class="atlas-stage" id="atlasStage">
-        <canvas id="atlasCanvas" aria-label="Interactive three-dimensional pilgrimage landscape of the Bandō 33 temples"></canvas>
+        <canvas id="atlasCanvas" aria-label="Interactive three-dimensional pilgrimage landscape of the Bandō 33 temples" aria-describedby="atlasHelp"></canvas>
         <div class="atlas-loading" id="atlasLoading">Loading the mountain path…</div>
         <div class="atlas-tooltip" id="atlasTooltip" hidden></div>
         <div class="atlas-map-title" aria-hidden="true">
@@ -52,7 +52,7 @@
           <button type="button" id="atlasZoomIn" aria-label="Zoom in">+</button>
           <button type="button" id="atlasReset" aria-label="Reset atlas view">Whole route</button>
         </div>
-        <p class="atlas-help">DRAG TO ORBIT · SCROLL TO ZOOM · SELECT A TEMPLE</p>
+        <p class="atlas-help" id="atlasHelp">LEFT-DRAG TO ORBIT · RIGHT-DRAG TO PAN · SCROLL TO ZOOM · SELECT A TEMPLE</p>
       </div>
       <aside class="atlas-index" aria-label="Temple index">
         <div class="index-head"><strong>巡礼の道 · The route</strong><span>in pilgrimage order</span></div>

@@ -1,6 +1,7 @@
   :root {
     --bg: #0f1115; --card: #1a1d24; --line: #2a2f3a; --text: #e8eaef;
     --muted: #9aa3b2; --accent: #c45c26; --ok: #3d9a6a; --warn: #c9a227; --bad: #c44;
+    --goshuin-font: "Zen Old Mincho", "Yu Mincho", "Hiragino Mincho ProN", serif;
   }
   * { box-sizing: border-box; }
   body {
@@ -79,6 +80,10 @@
   footer { text-align: center; color: var(--muted); font-size: .75rem; padding: 24px 16px 40px; }
   .filters { display: flex; gap: 6px; flex-wrap: wrap; }
   .filters button.active { border-color: var(--accent); color: #fff; background: #2a1a12; }
+  .region-filter {
+    max-width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--card); color: var(--text); font: inherit; font-size: .8rem;
+  }
   .week-nav { display: flex; gap: 0; overflow-x: auto; margin: 0 0 16px; border: 2px solid var(--line); background: var(--card); }
   .week-nav button { flex: 0 0 auto; border: 0; border-right: 1px solid var(--line); border-radius: 0; box-shadow: none; }
   .week-nav button.active { background: var(--line); color: var(--bg); }
@@ -466,27 +471,146 @@
     overflow: hidden;
     margin: 0 0 18px;
     padding: 0;
-    border: 1px solid rgba(78,62,50,.28);
-    border-radius: 18px;
-    background: rgba(251,248,242,.92);
-    box-shadow: 0 16px 34px rgba(74,51,38,.13), inset 0 1px 0 rgba(255,255,255,.95);
+    border: 1px solid rgba(78,62,50,.3);
+    border-radius: 3px;
+    background:
+      linear-gradient(94deg,rgba(111,86,61,.025),transparent 28%,rgba(157,59,49,.018) 68%,transparent),
+      repeating-linear-gradient(0deg,rgba(78,62,50,.018) 0 1px,transparent 1px 5px),
+      rgba(252,250,245,.96);
+    box-shadow: 0 17px 35px rgba(74,51,38,.14), inset 0 1px 0 rgba(255,255,255,.95);
   }
-  .day .card:first-of-type { border: 1px solid rgba(78,62,50,.28); }
-  .day .card.done { opacity: 1; border-color: rgba(82,107,88,.42); }
+  .day .card:first-of-type { border: 1px solid rgba(78,62,50,.3); }
+  .day .card.done { opacity: 1; border-color: rgba(157,59,49,.52); }
+  .day .card.done .name { text-decoration: none; }
   .day .card.closed { border-color: rgba(139,48,43,.5); }
   .day .card.recheck { border-width: 1px; }
-  .temple-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 0; }
-  .day .card .num { min-width: 0; margin: 0; padding: 0; color: var(--accent); background: transparent; border: 0; font: 500 .62rem "SFMono-Regular",Consolas,monospace; letter-spacing: .13em; }
-  .day .card .num::before { content: "TEMPLE "; color: var(--muted); }
-  .stamp-toggle { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font: .53rem "SFMono-Regular",Consolas,monospace; letter-spacing: .07em; text-transform: uppercase; cursor: pointer; }
-  .day .card .stamp-toggle .check { float: none; width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
-  .day .card .name { margin: 9px 18px 0; color: #251f1b; font-size: clamp(1.15rem,2vw,1.48rem); font-weight: 550; line-height: 1.12; letter-spacing: -.015em; }
-  .day .card .name .jp { display: inline; margin: 0 0 0 8px; color: #39302a; font-family: "Yu Mincho","Hiragino Mincho ProN",serif; font-size: .82em; font-weight: 400; letter-spacing: .05em; white-space: nowrap; }
-  .temple-alt { margin: 5px 18px 0; color: var(--muted); font-size: .68rem; }
-  .temple-preview-frame { position: relative; height: 188px; margin: 4px 10px 0; overflow: hidden; background: radial-gradient(ellipse at 50% 68%,rgba(201,161,103,.2),transparent 45%), radial-gradient(circle at 55% 48%,rgba(180,72,59,.11),transparent 57%); }
-  .temple-preview-frame::after { content: ""; position: absolute; inset: auto 13% 5px; height: 1px; background: linear-gradient(90deg,transparent,rgba(116,91,72,.24),transparent); }
-  .temple-preview { display: block; width: 100%; height: 100%; }
-  .card.done .temple-preview { filter: saturate(.65); opacity: .78; }
+  .temple-goshuin {
+    position: relative;
+    isolation: isolate;
+    height: 350px;
+    overflow: hidden;
+    border-bottom: 1px solid rgba(75,59,48,.19);
+    background:
+      radial-gradient(circle at 53% 52%,rgba(157,59,49,.06),transparent 29%),
+      linear-gradient(90deg,rgba(255,255,255,.4),transparent 18% 82%,rgba(122,92,63,.035));
+  }
+  .temple-goshuin::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(87deg,transparent 0 10px,rgba(85,67,52,.018) 10px 11px),
+      repeating-linear-gradient(2deg,transparent 0 17px,rgba(85,67,52,.014) 17px 18px);
+    mix-blend-mode: multiply;
+  }
+  .temple-card-top { position: absolute; inset: 0 0 auto; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 17px 0; }
+  .day .card .num { min-width: 0; margin: 0; padding: 0; color: var(--accent); background: transparent; border: 0; font: 600 .6rem "SFMono-Regular",Consolas,monospace; letter-spacing: .15em; }
+  .day .card .num::before { content: "坂東 "; color: #3b312b; font-family: var(--goshuin-font); letter-spacing: .08em; }
+  .stamp-toggle { display: inline-flex; align-items: center; gap: 7px; padding: 4px 6px 4px 5px; color: #74665a; border: 1px solid rgba(157,59,49,.25); background: rgba(252,248,239,.7); font: .5rem "SFMono-Regular",Consolas,monospace; letter-spacing: .07em; text-transform: uppercase; cursor: pointer; }
+  .stamp-toggle:hover { color: var(--accent); border-color: rgba(157,59,49,.55); }
+  .day .card .stamp-toggle .check { float: none; width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
+  .temple-preview {
+    position: absolute;
+    top: 54%;
+    left: 50%;
+    z-index: 0;
+    display: block;
+    width: min(116%,380px);
+    height: auto;
+    opacity: .54;
+    filter: saturate(.72) contrast(.92);
+    transform: translate(-50%,-50%) scale(1.08);
+    mix-blend-mode: multiply;
+  }
+  .temple-goshuin::after { content: ""; position: absolute; right: 13%; bottom: 44px; left: 13%; z-index: 1; height: 1px; background: linear-gradient(90deg,transparent,rgba(78,62,50,.19),transparent); }
+  .goshuin-round-seal {
+    position: absolute;
+    top: 102px;
+    left: 50%;
+    z-index: 1;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    place-items: center;
+    width: 126px;
+    height: 126px;
+    padding: 14px;
+    color: #c6382e;
+    border: 4px double currentColor;
+    border-radius: 50%;
+    opacity: .21;
+    transform: translateX(-50%) rotate(-4deg);
+    transition: opacity .28s ease,transform .32s ease;
+  }
+  .goshuin-round-seal::before { content: ""; position: absolute; inset: 8px; border: 1px solid currentColor; border-radius: 50%; }
+  .goshuin-round-seal small,.goshuin-round-seal strong { position: relative; z-index: 1; font-family: var(--goshuin-font); font-weight: 600; line-height: 1; }
+  .goshuin-round-seal small { font-size: .63rem; letter-spacing: .2em; }
+  .goshuin-round-seal strong { font-size: 2.35rem; }
+  .goshuin-devotion,.goshuin-date {
+    position: absolute;
+    z-index: 3;
+    color: #2f2823;
+    font-family: var(--goshuin-font);
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+  }
+  .goshuin-devotion { top: 70px; right: 21px; font-size: 1rem; font-weight: 600; letter-spacing: .18em; }
+  .goshuin-date { top: 76px; left: 20px; color: #51463d; font-size: .61rem; letter-spacing: .11em; }
+  .day .card .name {
+    position: absolute;
+    inset: 57px 56px 34px;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    color: #211d1a;
+    font-weight: 550;
+    line-height: 1.08;
+    text-align: center;
+    pointer-events: none;
+  }
+  .day .card .name .jp {
+    display: block;
+    margin: 0;
+    color: #241f1b;
+    font-family: var(--goshuin-font);
+    font-size: clamp(1.95rem,3.2vw,2.42rem);
+    font-weight: 600;
+    letter-spacing: .1em;
+    line-height: 1;
+    text-shadow: 0 1px 0 rgba(255,255,255,.72);
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+  }
+  .day .card .name .romaji { display: block; max-width: 170px; margin-top: 14px; font: 600 .72rem/1.25 "SFMono-Regular",Consolas,monospace; letter-spacing: .05em; }
+  .temple-alt { position: absolute; right: 58px; bottom: 10px; left: 58px; z-index: 4; margin: 0; color: #74665a; font: .55rem/1.3 "SFMono-Regular",Consolas,monospace; text-align: center; }
+  .goshuin-square-seal {
+    position: absolute;
+    right: 18px;
+    bottom: 15px;
+    z-index: 3;
+    display: grid;
+    place-content: center;
+    width: 48px;
+    height: 48px;
+    color: #c6382e;
+    border: 3px double currentColor;
+    opacity: .25;
+    font-family: var(--goshuin-font);
+    line-height: .9;
+    text-align: center;
+    transform: rotate(2deg);
+    transition: opacity .28s ease,transform .32s ease;
+  }
+  .goshuin-square-seal small { font-size: .42rem; letter-spacing: .08em; }
+  .goshuin-square-seal strong { font-size: 1rem; }
+  .card.done .temple-preview { opacity: .42; filter: saturate(.6) contrast(.9); }
+  .card.done .goshuin-round-seal { opacity: .84; transform: translateX(-50%) rotate(-4deg) scale(1.02); }
+  .card.done .goshuin-square-seal { opacity: .9; transform: rotate(-2deg) scale(1.04); }
+  .card.done .stamp-toggle { color: var(--accent); border-color: rgba(157,59,49,.58); background: rgba(157,59,49,.06); }
   .temple-facts { margin: 0 18px; border-top: 1px solid rgba(75,59,48,.2); }
   .temple-fact { display: grid; grid-template-columns: 31px 1fr; gap: 9px; align-items: center; min-height: 49px; padding: 9px 0; border-bottom: 1px solid rgba(75,59,48,.14); color: #322923; font-size: .78rem; line-height: 1.35; }
   .temple-fact .fact-icon { display: grid; place-items: center; width: 26px; height: 26px; color: #6c5b4e; border: 1px solid rgba(82,67,57,.62); border-radius: 50%; font: 600 .73rem/1 "SFMono-Regular",Consolas,monospace; }
@@ -496,7 +620,7 @@
   .temple-fact.hours { margin: 0; background: transparent; border-radius: 0; font-family: inherit; }
   .temple-fact.hours strong { font-weight: 550; }
   .temple-fact.hours.closed { color: var(--bad); }
-  .temple-fact .stamp-icon { color: var(--accent); border-color: rgba(157,59,49,.62); font-family: "Yu Mincho",serif; }
+  .temple-fact .stamp-icon { color: var(--accent); border-color: rgba(157,59,49,.62); font-family: var(--goshuin-font); }
   .day .card .actions { display: block; margin: 13px 18px 15px; }
   .day .card .actions a { display: block; width: 100%; padding: 9px 10px !important; border: 1px solid rgba(157,59,49,.42); border-radius: 2px; color: var(--accent); text-align: center; font-size: .56rem !important; text-transform: uppercase; }
   .temple-more { border-top: 1px solid rgba(75,59,48,.17); background: rgba(230,220,204,.36); }
@@ -511,8 +635,10 @@
   .journey-detail span { color: var(--accent); font: .52rem/1.35 "SFMono-Regular",Consolas,monospace; letter-spacing: .06em; text-transform: uppercase; }
   .journey-detail p { margin: 0; color: #4f463e; font-size: .7rem; line-height: 1.45; }
   @media (max-width: 480px) {
-    .temple-preview-frame { height: 210px; }
-    .day .card .name { font-size: 1.36rem; }
+    .temple-goshuin { height: 370px; }
+    .day .card .name { right: 68px; left: 68px; }
+    .day .card .name .jp { font-size: 2.45rem; }
+    .temple-preview { width: min(108%,400px); }
   }
   @media (min-width: 900px) {
     #list {

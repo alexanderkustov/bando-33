@@ -3,19 +3,32 @@ import { DAYLIGHT } from './data/daylight.js';
 import { renderDayCard } from './components/day-card.js';
 import { renderDaylightCycle } from './components/daylight-cycle.js';
 const SCHEDULE = new Map(DAYS.flatMap(day => day.templeNums.map(num => [num, day.day])));
-const CLOSED_DAYS = { 19: ['Thu 12 Nov'] };
+const CLOSED_WEEKDAYS = { 19: [4] };
 const RECHECK = {
   15: 'RECHECK · phone ahead before travelling',
   31: 'RECHECK · landslide damage / partial reopening'
 };
+const REGIONS = [
+  { id: 'kamakura-zushi', label: 'Kamakura–Zushi', templeNums: [1, 2, 3, 4] },
+  { id: 'odawara-atsugi-hiratsuka', label: 'Odawara–Atsugi–Hiratsuka', templeNums: [5, 6, 7] },
+  { id: 'zama-yokohama', label: 'Zama–Yokohama', templeNums: [8, 14] },
+  { id: 'tokyo', label: 'Tokyo', templeNums: [13] },
+  { id: 'saitama', label: 'Saitama', templeNums: [9, 10, 11, 12] },
+  { id: 'gunma', label: 'Gunma', templeNums: [15, 16] },
+  { id: 'tochigi', label: 'Tochigi', templeNums: [17, 18, 19, 20] },
+  { id: 'northern-ibaraki', label: 'Northern Ibaraki', templeNums: [21, 22] },
+  { id: 'southern-central-ibaraki', label: 'Southern/Central Ibaraki', templeNums: [23, 24, 25, 26] },
+  { id: 'chiba', label: 'Chiba', templeNums: [27, 28, 29, 30, 31, 32, 33] }
+];
+const REGION_BY_TEMPLE = new Map(REGIONS.flatMap(region => region.templeNums.map(num => [num, region.id])));
 for (const temple of TEMPLES) {
   const scheduledDay = SCHEDULE.get(temple.num);
   if (!scheduledDay) throw new Error('Temple #' + temple.num + ' is not scheduled');
   if (temple.day !== scheduledDay) throw new Error('Temple #' + temple.num + ' has conflicting dates');
-  if ((CLOSED_DAYS[temple.num] || []).includes(scheduledDay)) throw new Error('Temple #' + temple.num + ' is scheduled on a closure day');
+  const scheduledMeta = DAYS.find(day => day.day === scheduledDay);
+  const weekday = new Date(scheduledMeta.iso + 'T12:00:00').getDay();
+  if ((CLOSED_WEEKDAYS[temple.num] || []).includes(weekday)) throw new Error('Temple #' + temple.num + ' is scheduled on a closure day');
 }
-TEMPLES.find(temple => temple.num === 19).notes = 'Rescheduled to Tue 10 Nov because Ōya-ji is closed Thursdays';
-TEMPLES.find(temple => temple.num === 20).notes = 'Follows #19; #19 is closed Thursdays';
 const KEY = 'bando33-jiku-v5';
 const OLD_KEYS = ['bando33-jiku-v4','bando33-jiku-v3','bando33-jiku-v2','bando33-jiku-v1'];
 const DAY_PLAN_KEY = 'bando33-day-plans-v1';
@@ -29,6 +42,7 @@ if (!state) {
 state = state || {};
 let dayPlans = JSON.parse(localStorage.getItem(DAY_PLAN_KEY) || '{}') || {};
 let filter = 'all';
+let activeRegion = 'all';
 let activeWeek = 'all';
 let masonryObserver;
 let masonryFrame;
@@ -111,6 +125,11 @@ function routeMapUrl(day) {
     .filter(Boolean)
     .map(temple => `${temple.jp} ${temple.romaji}, ${temple.city}`);
   return 'https://www.google.com/maps/dir/' + [day.origin, ...stops].map(value => encodeURIComponent(value)).join('/');
+}
+
+function mapUrlForStops(origin, temples) {
+  const stops = temples.map(temple => `${temple.jp} ${temple.romaji}, ${temple.city}`);
+  return 'https://www.google.com/maps/dir/' + [origin, ...stops].map(value => encodeURIComponent(value)).join('/');
 }
 
 function fillDayPlanForm(day) {
@@ -268,8 +287,13 @@ function render() {
   for (const [day, temples] of days) {
     const meta = dayMeta(day);
     if (activeWeek !== 'all' && (!meta || weekKey(meta.iso) !== activeWeek)) continue;
+    const visibleTemples = activeRegion === 'all'
+      ? temples
+      : temples.filter(temple => REGION_BY_TEMPLE.get(temple.num) === activeRegion);
+    if (!visibleTemples.length) continue;
     const section = renderDayCard({
-      day, temples, meta, filter, state, fares: FARES, recheck: RECHECK,
+      day, temples: visibleTemples, meta, filter, state, fares: FARES, recheck: RECHECK,
+      mapUrl: activeRegion === 'all' ? meta.mapUrl : mapUrlForStops(meta.origin, visibleTemples),
       onToggle: (num, checked) => { state[num] = checked; if (!checked) delete state[num]; save(); render(); }
     });
     if (section.querySelector('.card') || filter === 'all') list.appendChild(section);
@@ -283,6 +307,17 @@ document.querySelectorAll('[data-filter]').forEach(btn => {
     document.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('active', b === btn));
     render();
   });
+});
+const regionFilter = document.getElementById('regionFilter');
+for (const region of REGIONS) {
+  const option = document.createElement('option');
+  option.value = region.id;
+  option.textContent = region.label;
+  regionFilter.appendChild(option);
+}
+regionFilter.addEventListener('change', () => {
+  activeRegion = regionFilter.value;
+  render();
 });
 document.getElementById('reset').addEventListener('click', () => {
   if (confirm('Clear all stamps?')) { for (const k of Object.keys(state)) delete state[k]; save(); render(); }
